@@ -602,7 +602,7 @@ public class MDS extends World {
 		synchronized(this.objects) {
 			// Simulation seconds
 			simulationSeconds++;
-			labels.add("Simulation Seconds:\n");
+			labels.add("\nSimulation Seconds:\n");
 			numbers.add(Integer.toString(simulationSeconds));
 
 			// Updates
@@ -700,9 +700,12 @@ public class MDS extends World {
 	}
 
 	private double calculatePressure() {
-		double volume = calculateVolume();
+		double areaXY = (xMax - xMin) * (yMax - yMin);
+		double areaXZ = (xMax - xMin) * (zMax - zMin);
+		double areaYZ = (yMax - yMin) * (zMax - zMin);
+		double totArea = 2.0 * (areaXY + areaXZ + areaYZ);
 
-		double pressure = momentumTransferred / volume;
+		double pressure = (2.0 * momentumTransferred) / totArea;
 		momentumTransferred = 0.0;
 
 		return pressure;
