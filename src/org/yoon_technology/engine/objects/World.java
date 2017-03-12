@@ -1,4 +1,4 @@
-package org.yoon_technology.engine;
+package org.yoon_technology.engine.objects;
 
 import java.util.ArrayList;
 
@@ -62,6 +62,10 @@ public class World {
 				text.update(timePassed);
 			}
 		}
+	}
+
+	public void sendMiliSecondTick() {
+		// Implement in extensions
 	}
 
 	public void sendSecondTick() {

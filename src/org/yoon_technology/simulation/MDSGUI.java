@@ -9,9 +9,11 @@ import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -25,6 +27,8 @@ import javax.swing.text.StyledDocument;
 
 import org.yoon_technology.engine.Camera;
 import org.yoon_technology.engine.Engine;
+import org.yoon_technology.engine.objects.DistributionGraph2D;
+import org.yoon_technology.engine.objects.TimelineGraph2D;
 import org.yoon_technology.gui.Display;
 import org.yoon_technology.gui.Window;
 import org.yoon_technology.math.Vector3d;
@@ -39,17 +43,22 @@ public class MDSGUI {
 
 	private Engine mdsEngine;
 	private Engine graphEngine;
-	private StatLineGraph2D distributionGraph1;
-	private StatLineGraph2D distributionGraph2;
-	private SlidingLineGraph2D timelineGraph3;
-	private SlidingLineGraph2D timelineGraph4;
+	private DistributionGraph2D distributionGraph1;
+	//	private DistributionGraph2D distributionGraph1_1;
+	private DistributionGraph2D distributionGraph2;
+	//	private DistributionGraph2D distributionGraph2_1;
+	private TimelineGraph2D timelineGraph3;
+	private TimelineGraph2D timelineGraph4;
 	private MDS mds;
 	private Display mdsDisplay;
 	private Display statDisplay1;
+	//	private Display statDisplay1_1;
 	private Display statDisplay2;
+	//	private Display statDisplay2_1;
 	private Display statDisplay3;
 	private Display statDisplay4;
 
+	private JPanel deleteParticleButtonPanel;
 	private JPanel mdsPanel;
 	private JPanel sidePanel;
 	private JPanel statPanel;
@@ -59,10 +68,18 @@ public class MDSGUI {
 	private JTextField xDim;
 	private JTextField yDim;
 	private JTextField zDim;
-	private JTextField numMolecules;
-	private JTextField initSpeed;
+	private JTextField scaleRadius;
+	private JTextField scaleMass;
+
+	private JTextField numParticles;
+	private JTextField speed;
 	private JTextField radius;
 	private JTextField mass;
+	private JTextField xPosInsert;
+	private JTextField yPosInsert;
+	private JTextField zPosInsert;
+
+	private ArrayList<JButton> deleteParticleButtons = new ArrayList<>();
 
 	private void createMdsDisplay(int width, int height) {
 		mdsEngine = new Engine();
@@ -74,6 +91,7 @@ public class MDSGUI {
 		mdsDisplay.setWorld(mds);
 		mdsDisplay.setLayout(new FlowLayout(SwingConstants.RIGHT));
 		mdsDisplay.setBackground(new Color(1, 20, 26));
+		mdsDisplay.setBorder(BorderFactory.createLineBorder(Color.GRAY));
 
 		JButton rotateButton = new JButton("S");
 		rotateButton.setFont(new Font("Lucida Sans Typewriter", Font.PLAIN, 14));
@@ -145,6 +163,8 @@ public class MDSGUI {
 
 		graphEngine.addWorld(distributionGraph1);
 		graphEngine.addWorld(distributionGraph2);
+		//		graphEngine.addWorld(distributionGraph1_1);
+		//		graphEngine.addWorld(distributionGraph2_1);
 		graphEngine.addWorld(timelineGraph3);
 		graphEngine.addWorld(timelineGraph4);
 		graphEngine.addCamera(new Vector3d(0.0, 0.0, 0.0), Camera.ORTHOGRAPHIC_PROJECTION);
@@ -155,18 +175,32 @@ public class MDSGUI {
 		statDisplay1.setWorld(distributionGraph1);
 		statDisplay1.setLayout(new FlowLayout(SwingConstants.RIGHT));
 		statDisplay1.setBackground(Color.BLACK);
+		statDisplay1.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
 		statDisplay2 = new Display(width, height, graphEngine);
 		statDisplay2.setWorld(distributionGraph2);
 		statDisplay2.setLayout(new FlowLayout(SwingConstants.RIGHT));
 		statDisplay2.setBackground(Color.BLACK);
+		statDisplay2.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
+		//		statDisplay1_1 = new Display(width, height, graphEngine);
+		//		statDisplay1_1.setWorld(distributionGraph1_1);
+		//		statDisplay1_1.setLayout(new FlowLayout(SwingConstants.RIGHT));
+		//		statDisplay1_1.setBackground(Color.BLACK);
+		//		statDisplay1_1.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
+		//		statDisplay2_1 = new Display(width, height, graphEngine);
+		//		statDisplay2_1.setWorld(distributionGraph2_1);
+		//		statDisplay2_1.setLayout(new FlowLayout(SwingConstants.RIGHT));
+		//		statDisplay2_1.setBackground(Color.BLACK);
+		//		statDisplay2_1.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
 		statDisplay3 = new Display(width, height, graphEngine);
 		statDisplay3.setWorld(timelineGraph3);
 		statDisplay3.setLayout(new FlowLayout(SwingConstants.RIGHT));
 		statDisplay3.setBackground(Color.BLACK);
+		statDisplay3.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
 		statDisplay4 = new Display(width, height, graphEngine);
 		statDisplay4.setWorld(timelineGraph4);
 		statDisplay4.setLayout(new FlowLayout(SwingConstants.RIGHT));
 		statDisplay4.setBackground(Color.BLACK);
+		statDisplay4.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
 
 		JButton reset1Button = new JButton("RESET");
 		reset1Button.setFont(new Font("Lucida Sans Typewriter", Font.PLAIN, 12));
@@ -192,13 +226,55 @@ public class MDSGUI {
 			}
 		});
 
+		//		JButton reset1_1Button = new JButton("RESET");
+		//		reset1_1Button.setFont(new Font("Lucida Sans Typewriter", Font.PLAIN, 12));
+		//		reset1_1Button.setFocusPainted(false);
+		//		reset1_1Button.setBackground(Color.BLACK);
+		//		reset1_1Button.setForeground(Color.WHITE);
+		//		reset1Button.addActionListener(new ActionListener() {
+		//			@Override
+		//			public void actionPerformed(ActionEvent e) {
+		//				distributionGraph1_1.clearObservations();
+		//			}
+		//		});
+		//
+		//		JButton reset2_1Button = new JButton("RESET");
+		//		reset2_1Button.setFont(new Font("Lucida Sans Typewriter", Font.PLAIN, 12));
+		//		reset2_1Button.setFocusPainted(false);
+		//		reset2_1Button.setBackground(Color.BLACK);
+		//		reset2_1Button.setForeground(Color.WHITE);
+		//		reset2_1Button.addActionListener(new ActionListener() {
+		//			@Override
+		//			public void actionPerformed(ActionEvent e) {
+		//				distributionGraph2_1.clearObservations();
+		//			}
+		//		});
+
+		JButton resetAvgButton = new JButton("RESET AVG");
+		resetAvgButton.setFont(new Font("Lucida Sans Typewriter", Font.PLAIN, 12));
+		resetAvgButton.setFocusPainted(false);
+		resetAvgButton.setBackground(Color.BLACK);
+		resetAvgButton.setForeground(Color.WHITE);
+		resetAvgButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				mds.cumulativePressure = 0;
+				mds.simulationSecondsPressure = 0.0000001;
+			}
+		});
+
 		statDisplay1.add(reset1Button); // Reset button for each
 		statDisplay2.add(reset2Button);
+		//		statDisplay1_1.add(reset1_1Button);
+		//		statDisplay2_1.add(reset2_1Button);
+		statDisplay3.add(resetAvgButton);
 
 		graphEngine.addDisplay(statDisplay1);
 		graphEngine.addDisplay(statDisplay2);
 		graphEngine.addDisplay(statDisplay3);
 		graphEngine.addDisplay(statDisplay4);
+		//		graphEngine.addDisplay(statDisplay1_1);
+		//		graphEngine.addDisplay(statDisplay2_1);
 	}
 
 	private void populateWindow() {
@@ -222,35 +298,72 @@ public class MDSGUI {
 		controlPanel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
 
 		/*
+		 * Border panels contain a block panel and a button to the left
+		 */
+		JPanel borderPanel1 = new JPanel(new BorderLayout());
+		JPanel borderPanel2 = new JPanel(new BorderLayout());
+
+		/*
+		 * Block panels contain groups of 2
+		 * (row 1, 2)
+		 * (row 3, 4)
+		 */
+		JPanel blockPanel1 = new JPanel(new GridLayout(0, 1));
+		blockPanel1.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+		JPanel blockPanel2 = new JPanel(new GridLayout(0, 1));
+		blockPanel2.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+
+
+		/*
 		 * Row # 1
 		 */
-		JPanel rowOnePanel = new JPanel(new FlowLayout());
+		JPanel rowOnePanel = new JPanel(new FlowLayout(SwingConstants.LEADING));
 		rowOnePanel.setBackground(new Color(1, 20, 26));
 
-		JLabel dimensionLabel = new JLabel("CONFINED DIMENSION            ");
-		dimensionLabel.setForeground(Color.WHITE);
-		JLabel xDimLabel = new JLabel("            X: ");
+		JLabel dimensionLabel = new JLabel("SIZE          ");
+		dimensionLabel.setForeground(Color.GRAY);
+		JLabel xDimLabel = new JLabel("X:");
 		xDimLabel.setForeground(Color.WHITE);
-		JLabel yDimLabel = new JLabel("              Y: ");
+		JLabel yDimLabel = new JLabel("Y:");
 		yDimLabel.setForeground(Color.WHITE);
-		JLabel zDimLabel = new JLabel("           Z: ");
+		JLabel zDimLabel = new JLabel("Z:");
 		zDimLabel.setForeground(Color.WHITE);
 
-		xDim = new JTextField(4);
+		xDim = new JTextField(5);
 		xDim.setBackground(Color.DARK_GRAY);
 		xDim.setForeground(Color.WHITE);
 		xDim.setBorder(BorderFactory.createEmptyBorder());
 		xDim.setText(Double.toString(mds.xMax - mds.xMin));
-		yDim = new JTextField(4);
+		yDim = new JTextField(5);
 		yDim.setBackground(Color.DARK_GRAY);
 		yDim.setForeground(Color.WHITE);
 		yDim.setBorder(BorderFactory.createEmptyBorder());
 		yDim.setText(Double.toString(mds.yMax - mds.yMin));
-		zDim = new JTextField(4);
+		zDim = new JTextField(5);
 		zDim.setBackground(Color.DARK_GRAY);
 		zDim.setForeground(Color.WHITE);
 		zDim.setBorder(BorderFactory.createEmptyBorder());
 		zDim.setText(Double.toString(mds.zMax - mds.zMin));
+
+		JLabel scaleLabel = new JLabel("SCALE      ");
+		scaleLabel.setForeground(Color.GRAY);
+		JLabel scaleRadiusLabel = new JLabel("R:");
+		scaleRadiusLabel.setForeground(Color.WHITE);
+		JLabel scaleMassLabel = new JLabel("M:");
+		scaleMassLabel.setForeground(Color.WHITE);
+
+		scaleRadius = new JTextField(3);
+		scaleRadius.setBackground(Color.DARK_GRAY);
+		scaleRadius.setForeground(Color.WHITE);
+		scaleRadius.setBorder(BorderFactory.createEmptyBorder());
+		scaleRadius.setText(Double.toString(mds.scaleRadius));
+		scaleMass = new JTextField(3);
+		scaleMass.setBackground(Color.DARK_GRAY);
+		scaleMass.setForeground(Color.WHITE);
+		scaleMass.setBorder(BorderFactory.createEmptyBorder());
+		scaleMass.setText(Double.toString(mds.scaleMass));
+
+
 
 		rowOnePanel.add(dimensionLabel);
 		rowOnePanel.add(xDimLabel);
@@ -259,58 +372,122 @@ public class MDSGUI {
 		rowOnePanel.add(yDim);
 		rowOnePanel.add(zDimLabel);
 		rowOnePanel.add(zDim);
+		//		rowOnePanel.add(updateSettingsButton);
 
 		/*
 		 * Row # 2
 		 */
-		JPanel rowTwoPanel = new JPanel(new FlowLayout());
+		JPanel rowTwoPanel = new JPanel(new FlowLayout(SwingConstants.LEADING));
 		rowTwoPanel.setBackground(new Color(1, 20, 26));
 
-		JLabel numMoleculesLabel = new JLabel("MOLECULES *: ");
-		numMoleculesLabel.setForeground(Color.WHITE);
-		JLabel initSpeedLabel = new JLabel("  VELOCITY *: ");
-		initSpeedLabel.setForeground(Color.WHITE);
-		JLabel radiusLabel = new JLabel("  RADIUS: ");
-		radiusLabel.setForeground(Color.WHITE);
-		JLabel massLabel = new JLabel("  MASS: ");
-		massLabel.setForeground(Color.WHITE);
-
-		numMolecules = new JTextField(4);
-		numMolecules.setBackground(Color.DARK_GRAY);
-		numMolecules.setForeground(Color.WHITE);
-		numMolecules.setBorder(BorderFactory.createEmptyBorder());
-		numMolecules.setText(Integer.toString(mds.numMolecules));
-		initSpeed = new JTextField(4);
-		initSpeed.setBackground(Color.DARK_GRAY);
-		initSpeed.setForeground(Color.WHITE);
-		initSpeed.setBorder(BorderFactory.createEmptyBorder());
-		initSpeed.setText(Double.toString(mds.initSpeed));
-		radius = new JTextField(4);
-		radius.setBackground(Color.DARK_GRAY);
-		radius.setForeground(Color.WHITE);
-		radius.setBorder(BorderFactory.createEmptyBorder());
-		radius.setText(Double.toString(mds.radius));
-		mass = new JTextField(4);
-		mass.setBackground(Color.DARK_GRAY);
-		mass.setForeground(Color.WHITE);
-		mass.setBorder(BorderFactory.createEmptyBorder());
-		mass.setText(Double.toString(mds.mass));
-
-		rowTwoPanel.add(numMoleculesLabel);
-		rowTwoPanel.add(numMolecules);
-		rowTwoPanel.add(initSpeedLabel);
-		rowTwoPanel.add(initSpeed);
-		rowTwoPanel.add(radiusLabel);
-		rowTwoPanel.add(radius);
-		rowTwoPanel.add(massLabel);
-		rowTwoPanel.add(mass);
+		rowTwoPanel.add(scaleLabel);
+		rowTwoPanel.add(scaleRadiusLabel);
+		rowTwoPanel.add(scaleRadius);
+		rowTwoPanel.add(scaleMassLabel);
+		rowTwoPanel.add(scaleMass);
 
 		/*
 		 * Row # 3
 		 */
-		JPanel rowThreePanel = new JPanel(new GridLayout(0, 3));
-		rowThreePanel.setBackground(Color.GRAY);
-		rowThreePanel.setPreferredSize(new Dimension(300, 0));
+		JPanel rowThreePanel = new JPanel(new FlowLayout(SwingConstants.LEADING));
+		rowThreePanel.setBackground(new Color(1, 20, 26));
+
+		JLabel insertLabel = new JLabel("ADD          ");
+		insertLabel.setForeground(Color.GRAY);
+		JLabel numParticlesLabel = new JLabel("N:");
+		numParticlesLabel.setForeground(Color.WHITE);
+		JLabel speedLabel = new JLabel("V:");
+		speedLabel.setForeground(Color.WHITE);
+		JLabel radiusLabel = new JLabel("R:");
+		radiusLabel.setForeground(Color.WHITE);
+		JLabel massLabel = new JLabel("M:");
+		massLabel.setForeground(Color.WHITE);
+		JLabel posInsertLabel = new JLabel("POSITION");
+		posInsertLabel.setForeground(Color.GRAY);
+		JLabel xPosInsertLabel = new JLabel("X:");
+		xPosInsertLabel.setForeground(Color.WHITE);
+		JLabel yPosInsertLabel = new JLabel("Y:");
+		yPosInsertLabel.setForeground(Color.WHITE);
+		JLabel zPosInsertLabel = new JLabel("Z:");
+		zPosInsertLabel.setForeground(Color.WHITE);
+
+		numParticles = new JTextField(3);
+		numParticles.setBackground(Color.DARK_GRAY);
+		numParticles.setForeground(Color.WHITE);
+		numParticles.setBorder(BorderFactory.createEmptyBorder());
+		numParticles.setText(Integer.toString(MDS.NUM_PARTICLES_INSERT));
+		speed = new JTextField(4);
+		speed.setBackground(Color.DARK_GRAY);
+		speed.setForeground(Color.WHITE);
+		speed.setBorder(BorderFactory.createEmptyBorder());
+		speed.setText(Double.toString(MDS.SPEED_PARTICLES));
+		radius = new JTextField(3);
+		radius.setBackground(Color.DARK_GRAY);
+		radius.setForeground(Color.WHITE);
+		radius.setBorder(BorderFactory.createEmptyBorder());
+		radius.setText(Double.toString(MDS.RADIUS_PARTICLES));
+		mass = new JTextField(3);
+		mass.setBackground(Color.DARK_GRAY);
+		mass.setForeground(Color.WHITE);
+		mass.setBorder(BorderFactory.createEmptyBorder());
+		mass.setText(Double.toString(MDS.MASS_PARTICLES));
+
+		xPosInsert = new JTextField(3);
+		xPosInsert.setBackground(Color.DARK_GRAY);
+		xPosInsert.setForeground(Color.WHITE);
+		xPosInsert.setBorder(BorderFactory.createEmptyBorder());
+		xPosInsert.setText(Double.toString(MDS.X_POSITION_PARTICLES));
+		yPosInsert = new JTextField(3);
+		yPosInsert.setBackground(Color.DARK_GRAY);
+		yPosInsert.setForeground(Color.WHITE);
+		yPosInsert.setBorder(BorderFactory.createEmptyBorder());
+		yPosInsert.setText(Double.toString(MDS.Y_POSITION_PARTICLES));
+		zPosInsert = new JTextField(3);
+		zPosInsert.setBackground(Color.DARK_GRAY);
+		zPosInsert.setForeground(Color.WHITE);
+		zPosInsert.setBorder(BorderFactory.createEmptyBorder());
+		zPosInsert.setText(Double.toString(MDS.Z_POSITION_PARTICLES));
+
+		rowThreePanel.add(insertLabel);
+		rowThreePanel.add(numParticlesLabel);
+		rowThreePanel.add(numParticles);
+		rowThreePanel.add(speedLabel);
+		rowThreePanel.add(speed);
+		rowThreePanel.add(radiusLabel);
+		rowThreePanel.add(radius);
+		rowThreePanel.add(massLabel);
+		rowThreePanel.add(mass);
+		//		rowThreePanel.add(insertMoleculesButton);
+
+		/*
+		 * Row # 4
+		 */
+		JPanel rowFourPanel = new JPanel(new FlowLayout(SwingConstants.LEADING));
+		rowFourPanel.setBackground(new Color(1, 20, 26));
+		rowFourPanel.setPreferredSize(new Dimension(300, 0));
+
+		final String[] colors = {"Red", "Yellow", "Green", "Cyan", "Blue", "Pink"};
+		JComboBox<String> colorBox = new JComboBox<>(colors);
+		colorBox.setBackground(new Color(1, 20, 26));
+		colorBox.setForeground(Color.WHITE);
+		colorBox.setPreferredSize(new Dimension(65, 20));
+		colorBox.setBorder(BorderFactory.createEmptyBorder());
+
+		rowFourPanel.add(posInsertLabel);
+		rowFourPanel.add(xPosInsertLabel);
+		rowFourPanel.add(xPosInsert);
+		rowFourPanel.add(yPosInsertLabel);
+		rowFourPanel.add(yPosInsert);
+		rowFourPanel.add(zPosInsertLabel);
+		rowFourPanel.add(zPosInsert);
+		rowFourPanel.add(colorBox);
+
+		/*
+		 * Row # 5
+		 */
+		JPanel rowFivePanel = new JPanel(new GridLayout(0, 2));
+		rowFivePanel.setBackground(Color.GRAY);
+		rowFivePanel.setPreferredSize(new Dimension(300, 0));
 
 		JButton pauseOrResumeButton = new JButton("PAUSE");
 		pauseOrResumeButton.setBackground(new Color(1, 20, 26));
@@ -328,42 +505,7 @@ public class MDSGUI {
 				}
 			}
 		});
-		JButton updateSettingsButton = new JButton("UPDATE");
-		updateSettingsButton.setBackground(new Color(1, 20, 26));
-		updateSettingsButton.setForeground(Color.WHITE);
-		updateSettingsButton.setFocusPainted(false);
-		updateSettingsButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				double xDim_ = 0.0, yDim_ = 0.0, zDim_ = 0.0;
-				try {
-					xDim_ = Double.parseDouble(xDim.getText());
-				} catch (NumberFormatException nfe) {}
-				try {
-					yDim_ = Double.parseDouble(yDim.getText());
-				} catch (NumberFormatException nfe) {}
-				try {
-					zDim_ = Double.parseDouble(zDim.getText());
-				} catch (NumberFormatException nfe) {}
-				double radius_ = 0.0, mass_ = 0.0;
-				try {
-					radius_ = Double.parseDouble(radius.getText());
-				} catch (NumberFormatException nfe) {}
-				try {
-					mass_ = Double.parseDouble(mass.getText());
-				} catch (NumberFormatException nfe) {}
-
-				mds.updateWorldSettings(mds.numMolecules, mds.initSpeed, radius_, mass_,
-						(xDim_ - (xDim_/2)),
-						-(xDim_/2),
-						(yDim_ - (yDim_/2)),
-						-(yDim_/2),
-						(zDim_ - (zDim_/2)),
-						-(zDim_/2));
-				mdsDisplay.setScale(mds.resized(mdsDisplay.getWidth(), mdsDisplay.getHeight()));
-			}
-		});
-		JButton startButton = new JButton("RESTART *");
+		JButton startButton = new JButton("REMOVE ALL");
 		startButton.setBackground(new Color(1, 20, 26));
 		startButton.setForeground(Color.WHITE);
 		startButton.setFocusPainted(false);
@@ -381,14 +523,99 @@ public class MDSGUI {
 					zDim_ = Double.parseDouble(zDim.getText());
 				} catch (NumberFormatException nfe) {}
 
-				int numMolecules_ = 0;
+				double scaleRadius_ = 0.0, scaleMass_ = 0.0;
 				try {
-					numMolecules_ = Integer.parseInt(numMolecules.getText());
+					scaleRadius_ = Double.parseDouble(scaleRadius.getText());
+				} catch (NumberFormatException nfe) {}
+				try {
+					scaleMass_ = Double.parseDouble(scaleMass.getText());
 				} catch (NumberFormatException nfe) {}
 
-				double initSpeed_ = 0.0, radius_ = 0.0, mass_ = 0.0;
+				mds.updateWorldSettings(scaleRadius_, scaleMass_,
+						(xDim_ - (xDim_/2)),
+						-(xDim_/2),
+						(yDim_ - (yDim_/2)),
+						-(yDim_/2),
+						(zDim_ - (zDim_/2)),
+						-(zDim_/2));
+
+				// Remove all particle type buttons
+				deleteParticleButtons.clear();
+				deleteParticleButtonPanel.removeAll();
+				deleteParticleButtonPanel.revalidate();
+				deleteParticleButtonPanel.repaint();
+
+				mds.initialize(); // Restarts
+				mdsDisplay.setScale(mds.resized(mdsDisplay.getWidth(), mdsDisplay.getHeight()));
+			}
+		});
+
+
+		rowFivePanel.add(pauseOrResumeButton);
+		rowFivePanel.add(startButton);
+
+		/*
+		 * Update and Insert Buttons
+		 */
+		JButton updateSettingsButton = new JButton("<HTML>UPDATE<br>SIZE/SCALE</HTML>");
+		updateSettingsButton.setPreferredSize(new Dimension(120, 50));
+		updateSettingsButton.setBackground(new Color(1, 20, 26));
+		updateSettingsButton.setForeground(Color.WHITE);
+		updateSettingsButton.setFocusPainted(false);
+		updateSettingsButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				double xDim_ = 0.0, yDim_ = 0.0, zDim_ = 0.0;
 				try {
-					initSpeed_ = Double.parseDouble(initSpeed.getText());
+					xDim_ = Double.parseDouble(xDim.getText());
+				} catch (NumberFormatException nfe) {}
+				try {
+					yDim_ = Double.parseDouble(yDim.getText());
+				} catch (NumberFormatException nfe) {}
+				try {
+					zDim_ = Double.parseDouble(zDim.getText());
+				} catch (NumberFormatException nfe) {}
+				double scaleRadius_ = 0.0, scaleMass_ = 0.0;
+				try {
+					scaleRadius_ = Double.parseDouble(scaleRadius.getText());
+				} catch (NumberFormatException nfe) {}
+				try {
+					scaleMass_ = Double.parseDouble(scaleMass.getText());
+				} catch (NumberFormatException nfe) {}
+
+				mds.updateWorldSettings(scaleRadius_, scaleMass_,
+						(xDim_ - (xDim_/2)),
+						-(xDim_/2),
+						(yDim_ - (yDim_/2)),
+						-(yDim_/2),
+						(zDim_ - (zDim_/2)),
+						-(zDim_/2));
+				mdsDisplay.setScale(mds.resized(mdsDisplay.getWidth(), mdsDisplay.getHeight()));
+			}
+		});
+
+		deleteParticleButtonPanel = new JPanel(new GridLayout(0, colors.length));
+		deleteParticleButtonPanel.setPreferredSize(new Dimension(0, 20));
+		deleteParticleButtonPanel.setBackground(Color.BLACK);
+		deleteParticleButtonPanel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+
+		JButton insertMoleculesButton = new JButton("<HTML>INSERT<br>PARTICLES</HTML>");
+		insertMoleculesButton.setPreferredSize(new Dimension(120, 50));
+		insertMoleculesButton.setBackground(new Color(1, 20, 26));
+		insertMoleculesButton.setForeground(Color.WHITE);
+		insertMoleculesButton.setFocusPainted(false);
+		insertMoleculesButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				int numParticles_ = 0;
+				double speed_ = 0.0, radius_ = 0.0, mass_ = 0.0;
+				double xPosInsert_ = 0.0, yPosInsert_ = 0.0, zPosInsert_ = 0.0;
+				try {
+					numParticles_ = Integer.parseInt(numParticles.getText());
+				} catch (NumberFormatException nfe) {}
+
+				try {
+					speed_ = Double.parseDouble(speed.getText());
 				} catch (NumberFormatException nfe) {}
 				try {
 					radius_ = Double.parseDouble(radius.getText());
@@ -397,27 +624,73 @@ public class MDSGUI {
 					mass_ = Double.parseDouble(mass.getText());
 				} catch (NumberFormatException nfe) {}
 
-				mds.updateWorldSettings(numMolecules_, initSpeed_, radius_, mass_,
-						(xDim_ - (xDim_/2)),
-						-(xDim_/2),
-						(yDim_ - (yDim_/2)),
-						-(yDim_/2),
-						(zDim_ - (zDim_/2)),
-						-(zDim_/2));
-				mds.initialize(); // Restarts
-				mdsDisplay.setScale(mds.resized(mdsDisplay.getWidth(), mdsDisplay.getHeight()));
+				try {
+					xPosInsert_ = Double.parseDouble(xPosInsert.getText());
+				} catch (NumberFormatException nfe) {}
+				try {
+					yPosInsert_ = Double.parseDouble(yPosInsert.getText());
+				} catch (NumberFormatException nfe) {}
+				try {
+					zPosInsert_ = Double.parseDouble(zPosInsert.getText());
+				} catch (NumberFormatException nfe) {}
+
+
+				// Get color from String
+				Color insertParticleColor = getColor((String)(colorBox.getSelectedItem()));
+
+				mds.insertParticles(numParticles_, speed_, radius_, mass_,
+						xPosInsert_, yPosInsert_, zPosInsert_,
+						insertParticleColor);
+
+				// Add a button to remove the particle
+				boolean addButton = true;
+				for(JButton button : deleteParticleButtons) {
+					if(button.getBackground().equals(insertParticleColor)) {
+						addButton = false;
+						break;
+					}
+				}
+
+				if(addButton) {
+					JButton deleteButton = new JButton("REMOVE");
+					deleteButton.setMargin(new Insets(0,0,0,0));
+					deleteButton.setBackground(insertParticleColor);
+					deleteButton.addActionListener(new ActionListener() {
+						@Override
+						public void actionPerformed(ActionEvent e) {
+							deleteParticleButtons.remove(deleteButton);
+							deleteParticleButtonPanel.remove(deleteButton);
+							mds.removeParticles(deleteButton.getBackground()); // Get color
+							deleteParticleButtonPanel.revalidate();
+							deleteParticleButtonPanel.repaint();
+						}
+					});
+					deleteParticleButtons.add(deleteButton);
+					deleteParticleButtonPanel.add(deleteButton);
+
+				}
 			}
 		});
 
+		blockPanel1.add(rowOnePanel);
+		blockPanel1.add(rowTwoPanel);
+		blockPanel2.add(rowThreePanel);
+		blockPanel2.add(rowFourPanel);
 
-		rowThreePanel.add(pauseOrResumeButton);
-		rowThreePanel.add(updateSettingsButton);
-		rowThreePanel.add(startButton);
+		borderPanel1.add(blockPanel1, BorderLayout.CENTER);
+		borderPanel1.add(updateSettingsButton, BorderLayout.EAST);
+		borderPanel2.add(blockPanel2, BorderLayout.CENTER);
+		borderPanel2.add(insertMoleculesButton, BorderLayout.EAST);
 
-		controlPanel.add(rowOnePanel);
-		controlPanel.add(rowTwoPanel);
-		controlPanel.add(rowThreePanel);
+		controlPanel.add(borderPanel1);
+		controlPanel.add(borderPanel2);
+		//		controlPanel.add(rowOnePanel);
+		//		controlPanel.add(rowTwoPanel);
+		//		controlPanel.add(rowThreePanel);
+		//		controlPanel.add(rowFourPanel);
+		controlPanel.add(rowFivePanel);
 
+		mdsPanel.add(deleteParticleButtonPanel, BorderLayout.NORTH);
 		mdsPanel.add(mdsDisplay, BorderLayout.CENTER);
 		mdsPanel.add(controlPanel, BorderLayout.SOUTH);
 	}
@@ -432,6 +705,7 @@ public class MDSGUI {
 		sidePanel_textPane.setFont(new Font("Lucida Sans Typewriter", Font.PLAIN, 10));
 		sidePanel_textPane.setBackground(new Color(1, 20, 26));
 		sidePanel_textPane.setForeground(Color.WHITE);
+		sidePanel_textPane.setBorder(BorderFactory.createLineBorder(Color.GRAY));
 
 		sidePanel.add(sidePanel_textPane);
 	}
@@ -441,8 +715,28 @@ public class MDSGUI {
 
 		statPanel.add(statDisplay1);
 		statPanel.add(statDisplay2);
+		//		statPanel.add(statDisplay1_1);
+		//		statPanel.add(statDisplay2_1);
 		statPanel.add(statDisplay3);
 		statPanel.add(statDisplay4);
+	}
+
+	private static Color getColor(String colorName) {
+		if(colorName.equals("Red")) {
+			return Color.RED;
+		} else if(colorName.equals("Yellow")) {
+			return Color.YELLOW;
+		} else if(colorName.equals("Green")) {
+			return Color.GREEN;
+		} else if(colorName.equals("Blue")) {
+			return Color.BLUE;
+		} else if(colorName.equals("Cyan")) {
+			return Color.CYAN;
+		} else if(colorName.equals("Pink")) {
+			return Color.PINK;
+		} else {
+			return null;
+		}
 	}
 
 	public void setText(Object[] labels, Object[] numbers) {
@@ -478,9 +772,7 @@ public class MDSGUI {
 			doc.setParagraphAttributes(doc.getLength(), 1, myAttrib, false);
 			doc.insertString(doc.getLength(), "\nMade by\nJaewan Yun\njay50@pitt.edu", myAttrib);
 
-		} catch (BadLocationException e) {
-			e.printStackTrace();
-		}
+		} catch (BadLocationException e) {}
 	}
 
 	public MDSGUI() {
@@ -488,28 +780,39 @@ public class MDSGUI {
 		mds.restoreWorldSettings();
 		mds.initialize();
 
-		distributionGraph1 = new StatLineGraph2D("Speed Distribution");
+		distributionGraph1 = new DistributionGraph2D("Speed Distribution");
 		distributionGraph1.restoreWorldSettings();
 		distributionGraph1.initialize();
 
-		distributionGraph2 = new StatLineGraph2D("Momentum Transfer Distribution");
+		//		distributionGraph1_1 = new DistributionGraph2D("Total Speed");
+		//		distributionGraph1_1.restoreWorldSettings();
+		//		distributionGraph1_1.initialize();
+
+		distributionGraph2 = new DistributionGraph2D("Transferred Momentum Distribution");
 		distributionGraph2.restoreWorldSettings();
 		distributionGraph2.initialize();
 
-		timelineGraph3 = new SlidingLineGraph2D("Pressure");
+		//		distributionGraph2_1 = new DistributionGraph2D("Total Rate of Momentum Transfer");
+		//		distributionGraph2_1.restoreWorldSettings();
+		//		distributionGraph2_1.initialize();
+
+		timelineGraph3 = new TimelineGraph2D("Current Pressure");
 		timelineGraph3.restoreWorldSettings();
 		timelineGraph3.initialize();
-		timelineGraph3.addUniqueObservation("P", Color.BLUE);
+		timelineGraph3.addUniqueObservation("Cur", Color.BLUE);
+		timelineGraph3.addUniqueObservation("Avg", Color.WHITE);
 
-		timelineGraph4 = new SlidingLineGraph2D("Collisions per Second");
+		timelineGraph4 = new TimelineGraph2D("Collisions Per Milisecond");
 		timelineGraph4.restoreWorldSettings();
 		timelineGraph4.initialize();
 		timelineGraph4.addUniqueObservation("Total", Color.BLUE);
-		timelineGraph4.addUniqueObservation("Molecule", Color.CYAN);
+		timelineGraph4.addUniqueObservation("Inter", Color.WHITE);
 		timelineGraph4.addUniqueObservation("Wall", Color.MAGENTA);
 
 		mds.addStatGraph(distributionGraph1);
 		mds.addStatGraph(distributionGraph2);
+		//		mds.addStatGraph(distributionGraph1_1);
+		//		mds.addStatGraph(distributionGraph2_1);
 		mds.addTimelineGraph(timelineGraph3);
 		mds.addTimelineGraph(timelineGraph4);
 

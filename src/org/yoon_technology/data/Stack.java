@@ -1,5 +1,11 @@
 package org.yoon_technology.data;
 
+/**
+ * Refer to LICENSE
+ *
+ * @author Jaewan Yun (jay50@pitt.edu)
+ */
+
 public class Stack<T> {
 	private Node top;
 

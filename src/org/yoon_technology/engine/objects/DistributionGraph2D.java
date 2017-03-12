@@ -1,13 +1,11 @@
-package org.yoon_technology.simulation;
+package org.yoon_technology.engine.objects;
 
 import java.awt.Color;
 import java.awt.Font;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.PriorityQueue;
 
-import org.yoon_technology.engine.WorldObject;
-import org.yoon_technology.engine.WorldObjectProperty;
-import org.yoon_technology.engine.WorldText;
 import org.yoon_technology.math.Vector3d;
 
 /**
@@ -16,30 +14,29 @@ import org.yoon_technology.math.Vector3d;
  * @author Jaewan Yun (jay50@pitt.edu)
  */
 
-public class StatLineGraph2D extends Graph2D {
+public class DistributionGraph2D extends Graph2D {
 
 	private String title;
 	private int numDivs; // Increases with increasing sample size
 	private double xMinVal = 0; // TODO Min-max priority queue
 	private double xMaxVal = 0;
 	private double dX; // Decreases with increasing sample size
-	private PriorityQueue<Double> observations;
+	private ArrayList<PriorityQueue<Double>> observations;
+	//	private int totalObservations; TODO
+	private ArrayList<int[]> countsInIndex;
+	private HashMap<Color, Integer> colorToID;
+	private HashMap<Integer, Color> idToColor;
 	private ArrayList<Flag> flags;
-	private int[] countsInIndex;
+	private volatile boolean recalculateCount; // Set to true if min/max values change or if dX changes
 
-	public StatLineGraph2D(String title) {
+	public DistributionGraph2D(String title) {
 		super();
 		this.title = title;
-		observations = new PriorityQueue<>();
+		observations = new ArrayList<>();
 		flags = new ArrayList<>();
-	}
-
-	public void clearObservations() {
-		synchronized(this.observations) {
-			xMinVal = 0;
-			xMaxVal = 0;
-			observations.clear();
-		}
+		countsInIndex = new ArrayList<>();
+		colorToID = new HashMap<>();
+		idToColor = new HashMap<>();
 	}
 
 	public void flag(String label, double xVal, Color color, double deltaHeight) {
@@ -54,6 +51,58 @@ public class StatLineGraph2D extends Graph2D {
 		}
 	}
 
+	public void clearObservations() {
+		xMinVal = 0;
+		xMaxVal = 0;
+		//		totalObservations = 0; TODO
+		synchronized(this.observations) {
+			for(PriorityQueue<Double> uniqueObservation : observations) {
+				uniqueObservation.clear();
+			}
+		}
+	}
+
+	public int addUniqueObservation(Color color) {
+		if(colorToID.containsKey(color))
+			return colorToID.get(color);
+
+		colorToID.put(color, observations.size());
+		idToColor.put(observations.size(), color);
+
+		observations.add(new PriorityQueue<>());
+		countsInIndex.add(new int[numDivs]);
+		return observations.size()-1;
+	}
+
+	public void addObservation(int id, Double observation) {
+		recalculateCount = true;
+		if(observation > xMaxVal)
+			xMaxVal = observation;
+		else if(observation < xMinVal)
+			xMinVal = observation;
+		else
+			recalculateCount = false;
+
+		synchronized(this.observations) {
+			observations.get(id).offer(observation);
+		}
+
+		// If there is no need to recalculate counts in bins, just place them in the array here
+		if(!recalculateCount) {
+			for(int j = 0; j < countsInIndex.get(id).length; j++) {
+				if(observation <= xMinVal + (dX * j)) { // Check starting from smallest bin if observation belongs in that bin
+					countsInIndex.get(id)[j]++;
+					break;
+				}
+			}
+		}
+		//		totalObservations++; TODO
+	}
+
+	public ArrayList<PriorityQueue<Double>> getObservations() {
+		return observations;
+	}
+
 	// No point in updating according to the engine, so update when values are updated
 	public void updateContext() {
 		if(observations.isEmpty())
@@ -62,45 +111,44 @@ public class StatLineGraph2D extends Graph2D {
 		/*
 		 * Count each occurance and place into its respective bin
 		 */
-		PriorityQueue<Double> backup = new PriorityQueue<>();
-		synchronized(this.observations) {
-			this.numDivs = (int)Math.log((observations.size()+1.0)*500.0)+1;
+		numDivs = 100; // Static for now
 
-			// Calculate dX
-			dX = (xMaxVal - xMinVal) / (double)numDivs;
+		// Calculate dX
+		double newDX = (xMaxVal - xMinVal) / (double)numDivs;
+		if(newDX != dX) {
+			recalculateCount = true;
+			this.dX = newDX;
+		}
 
-			// Init observation counter
-			countsInIndex = new int[numDivs + 2];
-			for(int j = 0; j <= numDivs; j++) {
-				countsInIndex[j] = 0;
-			}
+		int observationsSize = observations.size();
+		for(int j = 0; j < observationsSize; j++) { // For each color
+			// If we need to replace it then computation heavy lines need to be run
+			if(recalculateCount) {
 
-			int k = 0;
-			while(!observations.isEmpty()) {
-				Double observation = observations.remove();
-				backup.add(observation);
+				// Clear observation count array
+				countsInIndex.remove(j);
+				countsInIndex.add(j, new int[numDivs+1]);
 
-				if(observation > xMinVal + (dX * k))
-					k++;
+				PriorityQueue<Double> backup = new PriorityQueue<>();
+				int n = 0;
+				while(!observations.get(j).isEmpty()) {
+					Double observation = observations.get(j).remove();
+					backup.offer(observation);
 
-				countsInIndex[k]++;
+					if(observation > xMinVal + (dX * n))
+						n++;
+					countsInIndex.get(j)[n]++;
+				}
+				this.observations.remove(j);
+				this.observations.add(j, backup); // Observations always stay stored in queue
 			}
 		}
-		this.observations = backup;
 
 		/*
 		 * Translate into screen coordinates
 		 */
 		ArrayList<WorldObject> objects = new ArrayList<>();
 		ArrayList<WorldText> texts = new ArrayList<>();
-
-		WorldObjectProperty lineProperty1 = new WorldObjectProperty();
-		lineProperty1.addProperty(Color.GREEN);
-		lineProperty1.setDrawMode(WorldObjectProperty.LINES);
-		// Break continuum
-		WorldObjectProperty lineProperty2 = new WorldObjectProperty();
-		lineProperty2.addProperty(Color.GREEN);
-		lineProperty2.setDrawMode(WorldObjectProperty.END_LINES);
 
 		double range = xMax - xMin;
 		double stepRange = range / numDivs;
@@ -109,23 +157,36 @@ public class StatLineGraph2D extends Graph2D {
 		 * Set position of lines, normalized to maximum and stretched to (a little less than) screen height
 		 */
 		int maxCount = 0;
-		for(int j = 0; j <= numDivs; j++) {
-			if(countsInIndex[j] > maxCount)
-				maxCount = countsInIndex[j];
+		for(int[] currentCountsInIndex : countsInIndex) { // Get maximum count in all observations
+			for(int j = 0; j < currentCountsInIndex.length; j++) { // TODO array index out of bounds: 1 ???
+				if(currentCountsInIndex[j] > maxCount)
+					maxCount = currentCountsInIndex[j];
+			}
 		}
-		for(int j = 0; j <= numDivs; j++) {
-			WorldObject object = new WorldObject();
-			object.setPosition(new Vector3d(
-					xMin+(stepRange * j),
-					(countsInIndex[j]/(double)maxCount)*(height-50) -(height/2)+10, // Offset by -(height/2)+10
-					0.0));
 
-			if(j == numDivs)
-				object.setProperties(lineProperty2);
-			else
-				object.setProperties(lineProperty1);
+		int id = 0;
+		for(int j = 0; j < countsInIndex.size(); j++) { // TODO
+			WorldObjectProperty lineProperty1 = new WorldObjectProperty();
+			lineProperty1.setDrawMode(WorldObjectProperty.LINES);
+			// Break continuum
+			WorldObjectProperty lineProperty2 = new WorldObjectProperty();
+			lineProperty2.setDrawMode(WorldObjectProperty.END_LINES);
 
-			objects.add(object);
+			for(int k = 0; k < countsInIndex.get(j).length; k++) {
+				WorldObject object = new WorldObject();
+				object.setColor(idToColor.get(new Integer(id)));
+				object.setPosition(new Vector3d(
+						xMin+(stepRange * k),
+						(countsInIndex.get(j)[k]/(double)maxCount)*(height-50) -(height/2)+10, // Offset by -(height/2)+10
+						0.0));
+
+				if(k + 1 >= countsInIndex.get(j).length)
+					object.setProperties(lineProperty2);
+				else
+					object.setProperties(lineProperty1);
+				objects.add(object);
+			}
+			id++;
 		}
 
 		/*
@@ -134,11 +195,9 @@ public class StatLineGraph2D extends Graph2D {
 		synchronized(this.flags) {
 			for(Flag flag : flags) {
 				WorldObjectProperty flagProperty1 = new WorldObjectProperty();
-				flagProperty1.addProperty(flag.color);
 				flagProperty1.setDrawMode(WorldObjectProperty.LINES);
 				// Break continuum
 				WorldObjectProperty flagProperty2 = new WorldObjectProperty();
-				flagProperty2.addProperty(flag.color);
 				flagProperty2.setDrawMode(WorldObjectProperty.END_LINES);
 
 				// Project the fraction of flag.xVal/valRange onto screen's width range
@@ -147,13 +206,15 @@ public class StatLineGraph2D extends Graph2D {
 				double projectedX = (fractionToProject * range) - (width/2);
 
 				WorldObject flagObject1 = new WorldObject();
+				flagObject1.setColor(flag.color);
 				flagObject1.setPosition(new Vector3d(
 						projectedX,
-						-(height/2) + 5,
+						-(height/2),
 						0.0));
 				flagObject1.setProperties(flagProperty1);
 
 				WorldObject flagObject2 = new WorldObject();
+				flagObject2.setColor(flag.color);
 				flagObject2.setPosition(new Vector3d(
 						projectedX,
 						(height/2)-20 - flag.deltaHeight,
@@ -164,24 +225,18 @@ public class StatLineGraph2D extends Graph2D {
 				objects.add(flagObject2);
 
 				// String label flag
-				WorldObjectProperty textObjectProperty = new WorldObjectProperty();
-				textObjectProperty.addProperty(flag.color);
-
 				WorldText textObject = new WorldText(flag.label);
+				textObject.setColor(flag.color);
 				textObject.setPosition(new Vector3d(projectedX + 5, (height/2) - 30 - flag.deltaHeight, 0.0));
-				textObject.setProperties(textObjectProperty);
-				textObject.setFont(new Font("Lucida Sans Typewriter", Font.PLAIN, 12));
+				textObject.setFont(new Font("Lucida Sans Typewriter", Font.PLAIN, 14));
 				texts.add(textObject);
 			}
 		}
 
 		// Title of graph
-		WorldObjectProperty textObjectProperty = new WorldObjectProperty();
-		textObjectProperty.addProperty(Color.LIGHT_GRAY);
-
 		WorldText textObject = new WorldText(title);
+		textObject.setColor(Color.LIGHT_GRAY);
 		textObject.setPosition(new Vector3d(-title.length()*3.5, (height/2) - 15, 0.0));
-		textObject.setProperties(textObjectProperty);
 		textObject.setFont(new Font("Lucida Sans Typewriter", Font.BOLD, 12));
 		texts.add(textObject);
 
@@ -192,17 +247,6 @@ public class StatLineGraph2D extends Graph2D {
 		}
 		for(int j = 0; j < texts.size(); j++) {
 			this.addText(texts.get(j));
-		}
-	}
-
-	public void addObservation(Double observation) {
-		synchronized(this.observations) {
-			if(observation > xMaxVal)
-				xMaxVal = observation;
-			else if(observation < xMinVal)
-				xMinVal = observation;
-
-			observations.add(observation);
 		}
 	}
 
@@ -217,25 +261,25 @@ public class StatLineGraph2D extends Graph2D {
 
 		for(int j = 0; j <= numDivs; j++) {
 			WorldObjectProperty xAxisProperty1 = new WorldObjectProperty();
-			xAxisProperty1.addProperty(Color.GRAY);
 			xAxisProperty1.setDrawMode(WorldObjectProperty.LINES);
 			// Break continuum
 			WorldObjectProperty xAxisProperty2 = new WorldObjectProperty();
-			xAxisProperty2.addProperty(Color.GRAY);
 			xAxisProperty2.setDrawMode(WorldObjectProperty.END_LINES);
 
 			WorldObject lineObject = new WorldObject();
+			lineObject.setColor(Color.GRAY);
 			lineObject.setPosition(new Vector3d(
 					xMin+(stepRange*j),
-					originY + 3, // Offset by -(height/2)+10
+					originY - 5, // Offset by -(height/2)+10
 					0.0));
 			lineObject.setProperties(xAxisProperty1);
 			objects.add(lineObject);
 
 			lineObject = new WorldObject();
+			lineObject.setColor(Color.GRAY);
 			lineObject.setPosition(new Vector3d(
 					xMin+(stepRange*j),
-					originY - 3, // Offset by -(height/2)+10
+					originY - 10, // Offset by -(height/2)+10
 					0.0));
 			lineObject.setProperties(xAxisProperty2);
 			objects.add(lineObject);

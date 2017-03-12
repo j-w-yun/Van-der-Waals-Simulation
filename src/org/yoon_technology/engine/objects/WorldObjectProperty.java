@@ -1,4 +1,4 @@
-package org.yoon_technology.engine;
+package org.yoon_technology.engine.objects;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -22,17 +22,17 @@ public class WorldObjectProperty implements Iterable<Object> {
 		this.properties = new ArrayList<>();
 	}
 
-	public void addProperty(Object property) {
-		this.properties.add(property);
-	}
-
-	public void setProperty(ArrayList<Object> properties) {
-		this.properties = properties;
-	}
-
-	public ArrayList<Object> getProperty() {
-		return properties;
-	}
+	//	public void addProperty(Object property) {
+	//		this.properties.add(property);
+	//	}
+	//
+	//	public void setProperty(ArrayList<Object> properties) {
+	//		this.properties = properties;
+	//	}
+	//
+	//	public ArrayList<Object> getProperty() {
+	//		return properties;
+	//	}
 
 	public void setDrawMode(int drawMode) {
 		this.drawMode = drawMode;

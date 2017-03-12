@@ -1,5 +1,6 @@
-package org.yoon_technology.engine;
+package org.yoon_technology.engine.objects;
 
+import java.awt.Color;
 import java.util.ArrayList;
 
 import org.yoon_technology.math.Vector3d;
@@ -18,6 +19,7 @@ public class WorldObject {
 	private Vector3d velocity;
 	private double radius;
 	private double mass;
+	private Color color;
 
 	public WorldObject() {
 		objects = new ArrayList<>();
@@ -54,6 +56,14 @@ public class WorldObject {
 
 	public double getMass() {
 		return mass;
+	}
+
+	public void setColor(Color color) {
+		this.color = color;
+	}
+
+	public Color getColor() {
+		return color;
 	}
 
 	public void setProperties(WorldObjectProperty properties) {

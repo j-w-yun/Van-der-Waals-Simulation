@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import org.yoon_technology.engine.objects.World;
 import org.yoon_technology.gui.Display;
 import org.yoon_technology.gui.Window;
 import org.yoon_technology.math.Vector3d;
@@ -16,7 +17,7 @@ import org.yoon_technology.math.Vector3d;
 
 public class Engine {
 
-	public static final double SECONDS_PER_UPDATE = 1.0 / 120.0;
+	public static final double SECONDS_PER_UPDATE = 1.0 / 60.0;
 	private ArrayList<Display> displays;
 	private ArrayList<World> worlds;
 	private Camera camera;
@@ -110,6 +111,7 @@ public class Engine {
 		};
 		timer.schedule(task, 0, 1000);
 
+		double systemMiliSeconds = 0.0;
 		double systemSeconds = 0.0;
 
 		// Main loop
@@ -120,8 +122,6 @@ public class Engine {
 			leadingTime = System.nanoTime();
 
 			boolean idle = true;
-			//			if(focusComputation)
-			//				idle = false;
 
 			while(delta >= SECONDS_PER_UPDATE) {
 				Window.input(this, SECONDS_PER_UPDATE);
@@ -130,11 +130,25 @@ public class Engine {
 					update(SECONDS_PER_UPDATE);
 					upsCounter++;
 
+					// Milisecond tick
+					systemMiliSeconds += SECONDS_PER_UPDATE * 1000.0;
+					if(systemMiliSeconds >= 1.0) {
+						new Thread(() -> {
+							for(World world : worlds) {
+								world.sendMiliSecondTick();
+							}
+						}).start();
+						systemMiliSeconds = 0;
+					}
+
+					// Second tick
 					systemSeconds += SECONDS_PER_UPDATE;
 					if(systemSeconds >= 1.0) {
-						for(World world : worlds) {
-							world.sendSecondTick();
-						}
+						new Thread(() -> {
+							for(World world : worlds) {
+								world.sendSecondTick();
+							}
+						}).start();
 						systemSeconds = 0;
 					}
 				}
@@ -160,8 +174,8 @@ public class Engine {
 			}
 
 			// Sleep if undemanding
-			if(idle)
-				try { Thread.sleep(10); } catch (InterruptedException e) {}
+			//			if(idle)
+			//				try { Thread.sleep(10); } catch (InterruptedException e) {}
 		}
 	}
 

@@ -2,11 +2,14 @@ package org.yoon_technology.simulation;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.HashMap;
 
-import org.yoon_technology.engine.World;
-import org.yoon_technology.engine.WorldObject;
-import org.yoon_technology.engine.WorldObjectProperty;
-import org.yoon_technology.engine.WorldText;
+import org.yoon_technology.engine.objects.DistributionGraph2D;
+import org.yoon_technology.engine.objects.TimelineGraph2D;
+import org.yoon_technology.engine.objects.World;
+import org.yoon_technology.engine.objects.WorldObject;
+import org.yoon_technology.engine.objects.WorldObjectProperty;
+import org.yoon_technology.engine.objects.WorldText;
 import org.yoon_technology.math.Vector3d;
 
 /**
@@ -19,63 +22,81 @@ public class MDS extends World {
 
 	// Constants
 	public static final double BOLTZMANN_K = 1.38066 * Math.pow(10.0, -23.0); // J / K
+	// Default settings
+	public static final double X_CONFINEMENT_SIZE = 1000.0;
+	public static final double Y_CONFINEMENT_SIZE = 1000.0;
+	public static final double Z_CONFINEMENT_SIZE = 1000.0;
+	public static final double SCALE_RADIUS = 1.0;
+	public static final double SCALE_MASS = 1.0;
+	public static final int NUM_PARTICLES_INSERT = 100;
+	public static final double SPEED_PARTICLES = 1000.0;
+	public static final double RADIUS_PARTICLES = 10.0;
+	public static final double MASS_PARTICLES = 10.0;
+	public static final double X_POSITION_PARTICLES = 0.0;
+	public static final double Y_POSITION_PARTICLES = 0.0;
+	public static final double Z_POSITION_PARTICLES = 0.0;
 	// Settings
-	public int numMolecules;
-	public double initSpeed;
-	public double radius;
-	public double mass;
 	public double xMax;
 	public double xMin;
 	public double yMax;
 	public double yMin;
 	public double zMax;
 	public double zMin;
-	// Counters
+	public double scaleRadius;
+	public double scaleMass;
+	public double xPosInsert;
+	public double yPosInsert;
+	public double zPosInsert;
+	// Cumulatives
+	public double cumulativePressure;
+	public double simulationSecondsPressure;
+	private double simulationSeconds;
+	private int numParticles;
+	private int milisecondsPassed;
 	private long totalUpdateCounter;
-	private int simulationSeconds;
-	private double correctTotalEnergy;
-	private double momentumTransferred;
-	private double cumulativePressure;
+	private double totalImpartedMomentum;
 	private double moleculeCollisions;
 	private double wallCollisions;
+	private volatile double currentPressure;
 	// GUI
 	private static MDSGUI mdsgui;
 	// Statistics
-	private ArrayList<StatLineGraph2D> statGraphs;
-	private ArrayList<SlidingLineGraph2D> timelineGraphs;
-	private ArrayList<Integer> timeKeepers;
+	private ArrayList<DistributionGraph2D> statGraphs;
+	private ArrayList<TimelineGraph2D> timelineGraphs;
+	private HashMap<Color, Integer> colorIDmap;
 
-	public void addStatGraph(StatLineGraph2D statGraph) {
+	public void addStatGraph(DistributionGraph2D statGraph) {
+		statGraph.addUniqueObservation(Color.RED); // Add momentum imparted distribution display
 		this.statGraphs.add(statGraph);
-		timeKeepers.add(new Integer(0));
 	}
 
-	public void addTimelineGraph(SlidingLineGraph2D timelineGraph) {
+	public void addTimelineGraph(TimelineGraph2D timelineGraph) {
 		this.timelineGraphs.add(timelineGraph);
-		timeKeepers.add(new Integer(0));
 	}
 
 	public MDS() {
 		this.restoreWorldSettings();
 		this.statGraphs = new ArrayList<>();
 		this.timelineGraphs = new ArrayList<>();
-		timeKeepers = new ArrayList<>();
+		this.colorIDmap = new HashMap<>();
 	}
 
 	@Override
 	public void restoreWorldSettings() {
 		super.restoreWorldSettings();
 
-		numMolecules = 1000;
-		initSpeed = 1000.0;
-		radius = 5.0;
-		mass = 10.0;
-		xMax = 500.0;
-		xMin = -500.0;
-		yMax = 250.0;
-		yMin = -250.0;
-		zMax = 500.0;
-		zMin = -500.0;
+		numParticles = 0;
+		xMax = X_CONFINEMENT_SIZE / 2.0;
+		xMin = -(X_CONFINEMENT_SIZE / 2.0);
+		yMax = Y_CONFINEMENT_SIZE / 2.0;
+		yMin = -(Y_CONFINEMENT_SIZE / 2.0);
+		zMax = Z_CONFINEMENT_SIZE / 2.0;
+		zMin = -(Z_CONFINEMENT_SIZE / 2.0);
+		scaleRadius = SCALE_RADIUS;
+		scaleMass = SCALE_MASS;
+		xPosInsert = X_POSITION_PARTICLES;
+		yPosInsert = Y_POSITION_PARTICLES;
+		zPosInsert = Z_POSITION_PARTICLES;
 	}
 
 	@Override
@@ -88,14 +109,13 @@ public class MDS extends World {
 		return scale / 1.25;
 	}
 
-	public void updateWorldSettings(int numMolecules, double initSpeed, double radius, double mass,
+	public void updateWorldSettings(double scaleRadius, double scaleMass,
 			double xMax, double xMin, double yMax, double yMin, double zMax, double zMin) {
 
-		this.numMolecules = numMolecules;
-		this.initSpeed = initSpeed;
-
-		this.radius = radius;
-		this.mass = mass;
+		double lastScaleRadius = this.scaleRadius;
+		this.scaleRadius = scaleRadius;
+		double lastScaleMass = this.scaleMass;
+		this.scaleMass = scaleMass;
 
 		this.xMax = xMax;
 		this.xMin = xMin;
@@ -106,25 +126,10 @@ public class MDS extends World {
 
 		synchronized(this.objects) {
 			for(WorldObject object : objects) {
-				object.setRadius(radius);
-				object.setMass(mass);
-
-				Vector3d position = object.getPosition();
-				// X clamp
-				if(position.getX() + radius > xMax)
-					object.getPosition().setX(xMax - radius * 2);
-				else if(position.getX() - radius < xMin)
-					object.getPosition().setX(xMin + radius * 2);
-				// Y clamp
-				if(position.getY() + radius > yMax)
-					object.getPosition().setY(yMax - radius * 2);
-				else if(position.getY() - radius < yMin)
-					object.getPosition().setY(yMin + radius * 2);
-				// Z clamp
-				if(position.getZ() + radius > zMax)
-					object.getPosition().setZ(zMax - radius * 2);
-				else if(position.getZ() - radius < zMin)
-					object.getPosition().setZ(zMin + radius * 2);
+				if(object.getVelocity() == null) // Skip static objects (e.g. axes)
+					continue;
+				object.setRadius(object.getRadius() * (scaleRadius/lastScaleRadius));
+				object.setMass(object.getMass() * (scaleMass/lastScaleMass));
 			}
 		}
 		createAxes();
@@ -136,83 +141,74 @@ public class MDS extends World {
 
 		// X AXIS
 		WorldObjectProperty xAxisProperty1 = new WorldObjectProperty();
-		xAxisProperty1.addProperty(Color.RED);
 		xAxisProperty1.setDrawMode(WorldObjectProperty.LINES);
 		// Break continuum
 		WorldObjectProperty xAxisProperty2 = new WorldObjectProperty();
-		xAxisProperty2.addProperty(Color.RED);
 		xAxisProperty2.setDrawMode(WorldObjectProperty.END_LINES);
 
 		WorldObject lineObject = new WorldObject();
+		lineObject.setColor(Color.RED);
 		lineObject.setPosition(new Vector3d(xMax, 0.0, 0.0));
 		lineObject.setProperties(xAxisProperty1);
 		objects.add(lineObject);
 
 		lineObject = new WorldObject();
+		lineObject.setColor(Color.RED);
 		lineObject.setPosition(new Vector3d(xMin, 0.0, 0.0));
 		lineObject.setProperties(xAxisProperty2);
 		objects.add(lineObject);
 		// "X"
-		WorldObjectProperty xAxisTextProperty = new WorldObjectProperty();
-		xAxisTextProperty.addProperty(Color.RED);
-
 		WorldText textObject = new WorldText("X");
+		textObject.setColor(Color.RED);
 		textObject.setPosition(new Vector3d(xMax + 20.0, 0.0, 0.0));
-		textObject.setProperties(xAxisTextProperty);
 		texts.add(textObject);
 
 		// Y AXIS
 		WorldObjectProperty yAxisProperty1 = new WorldObjectProperty();
-		yAxisProperty1.addProperty(Color.GREEN);
 		yAxisProperty1.setDrawMode(WorldObjectProperty.LINES);
 		// Break continuum
 		WorldObjectProperty yAxisProperty2 = new WorldObjectProperty();
-		yAxisProperty2.addProperty(Color.GREEN);
 		yAxisProperty2.setDrawMode(WorldObjectProperty.END_LINES);
 
 		lineObject = new WorldObject();
+		lineObject.setColor(Color.GREEN);
 		lineObject.setPosition(new Vector3d(0.0, yMax, 0.0));
 		lineObject.setProperties(yAxisProperty1);
 		objects.add(lineObject);
 
 		lineObject = new WorldObject();
+		lineObject.setColor(Color.GREEN);
 		lineObject.setPosition(new Vector3d(0.0, yMin, 0.0));
 		lineObject.setProperties(yAxisProperty2);
 		objects.add(lineObject);
 		// "Y"
-		WorldObjectProperty yAxisTextProperty = new WorldObjectProperty();
-		yAxisTextProperty.addProperty(Color.GREEN);
-
 		textObject = new WorldText("Y");
+		textObject.setColor(Color.GREEN);
 		textObject.setPosition(new Vector3d(0.0, yMax + 20, 0.0));
-		textObject.setProperties(yAxisTextProperty);
 		texts.add(textObject);
 
 		// Z AXIS
 		WorldObjectProperty zAxisProperty1 = new WorldObjectProperty();
-		zAxisProperty1.addProperty(Color.BLUE);
 		zAxisProperty1.setDrawMode(WorldObjectProperty.LINES);
 		// Break continuum
 		WorldObjectProperty zAxisProperty2 = new WorldObjectProperty();
-		zAxisProperty2.addProperty(Color.BLUE);
 		zAxisProperty2.setDrawMode(WorldObjectProperty.END_LINES);
 
 		lineObject = new WorldObject();
+		lineObject.setColor(Color.BLUE);
 		lineObject.setPosition(new Vector3d(0.0, 0.0, zMax));
 		lineObject.setProperties(zAxisProperty1);
 		objects.add(lineObject);
 
 		lineObject = new WorldObject();
+		lineObject.setColor(Color.BLUE);
 		lineObject.setPosition(new Vector3d(0.0, 0.0, zMin));
 		lineObject.setProperties(zAxisProperty2);
 		objects.add(lineObject);
 		// "Z"
-		WorldObjectProperty zAxisTextProperty = new WorldObjectProperty();
-		zAxisTextProperty.addProperty(Color.BLUE);
-
 		textObject = new WorldText("Z");
+		textObject.setColor(Color.BLUE);
 		textObject.setPosition(new Vector3d(0.0, 0.0, zMax + 20));
-		textObject.setProperties(zAxisTextProperty);
 		texts.add(textObject);
 
 		/*
@@ -221,36 +217,39 @@ public class MDS extends World {
 		// Break continuum between this and next axis line
 
 		WorldObjectProperty boxOutlineProperty1 = new WorldObjectProperty();
-		boxOutlineProperty1.addProperty(Color.WHITE);
 		boxOutlineProperty1.setDrawMode(WorldObjectProperty.LINES);
 
 		WorldObjectProperty boxOutlineProperty2 = new WorldObjectProperty();
-		boxOutlineProperty2.addProperty(Color.WHITE);
 		boxOutlineProperty2.setDrawMode(WorldObjectProperty.END_LINES);
 
 		// Top square
 		// 1
 		lineObject = new WorldObject();
+		lineObject.setColor(Color.WHITE);
 		lineObject.setPosition(new Vector3d(xMax, yMax, zMax));
 		lineObject.setProperties(boxOutlineProperty1);
 		objects.add(lineObject);
 		// 2
 		lineObject = new WorldObject();
+		lineObject.setColor(Color.WHITE);
 		lineObject.setPosition(new Vector3d(xMax, yMax, zMin));
 		lineObject.setProperties(boxOutlineProperty1);
 		objects.add(lineObject);
 		// 3
 		lineObject = new WorldObject();
+		lineObject.setColor(Color.WHITE);
 		lineObject.setPosition(new Vector3d(xMin, yMax, zMin));
 		lineObject.setProperties(boxOutlineProperty1);
 		objects.add(lineObject);
 		// 4
 		lineObject = new WorldObject();
+		lineObject.setColor(Color.WHITE);
 		lineObject.setPosition(new Vector3d(xMin, yMax, zMax));
 		lineObject.setProperties(boxOutlineProperty1);
 		objects.add(lineObject);
 		// 1
 		lineObject = new WorldObject();
+		lineObject.setColor(Color.WHITE);
 		lineObject.setPosition(new Vector3d(xMax + 1, yMax, zMax));
 		lineObject.setProperties(boxOutlineProperty2);
 		objects.add(lineObject);
@@ -258,26 +257,31 @@ public class MDS extends World {
 		// Bottom square
 		// 1
 		lineObject = new WorldObject();
+		lineObject.setColor(Color.WHITE);
 		lineObject.setPosition(new Vector3d(xMax, yMin, zMax));
 		lineObject.setProperties(boxOutlineProperty1);
 		objects.add(lineObject);
 		// 2
 		lineObject = new WorldObject();
+		lineObject.setColor(Color.WHITE);
 		lineObject.setPosition(new Vector3d(xMax, yMin, zMin));
 		lineObject.setProperties(boxOutlineProperty1);
 		objects.add(lineObject);
 		// 3
 		lineObject = new WorldObject();
+		lineObject.setColor(Color.WHITE);
 		lineObject.setPosition(new Vector3d(xMin, yMin, zMin));
 		lineObject.setProperties(boxOutlineProperty1);
 		objects.add(lineObject);
 		// 4
 		lineObject = new WorldObject();
+		lineObject.setColor(Color.WHITE);
 		lineObject.setPosition(new Vector3d(xMin, yMin, zMax));
 		lineObject.setProperties(boxOutlineProperty1);
 		objects.add(lineObject);
 		// 1
 		lineObject = new WorldObject();
+		lineObject.setColor(Color.WHITE);
 		lineObject.setPosition(new Vector3d(xMax-1, yMin, zMax));
 		lineObject.setProperties(boxOutlineProperty1);
 		objects.add(lineObject);
@@ -285,37 +289,45 @@ public class MDS extends World {
 		// Sides
 		// 1
 		lineObject = new WorldObject();
+		lineObject.setColor(Color.WHITE);
 		lineObject.setPosition(new Vector3d(xMax, yMax-1, zMax));
 		lineObject.setProperties(boxOutlineProperty1);
 		objects.add(lineObject);
 		lineObject = new WorldObject();
+		lineObject.setColor(Color.WHITE);
 		lineObject.setPosition(new Vector3d(xMax, yMin+1, zMax));
 		lineObject.setProperties(boxOutlineProperty2);
 		objects.add(lineObject);
 		// 2
 		lineObject = new WorldObject();
+		lineObject.setColor(Color.WHITE);
 		lineObject.setPosition(new Vector3d(xMin, yMax-1, zMax));
 		lineObject.setProperties(boxOutlineProperty1);
 		objects.add(lineObject);
 		lineObject = new WorldObject();
+		lineObject.setColor(Color.WHITE);
 		lineObject.setPosition(new Vector3d(xMin, yMin+1, zMax));
 		lineObject.setProperties(boxOutlineProperty2);
 		objects.add(lineObject);
 		// 3
 		lineObject = new WorldObject();
+		lineObject.setColor(Color.WHITE);
 		lineObject.setPosition(new Vector3d(xMax, yMax-1, zMin));
 		lineObject.setProperties(boxOutlineProperty1);
 		objects.add(lineObject);
 		lineObject = new WorldObject();
+		lineObject.setColor(Color.WHITE);
 		lineObject.setPosition(new Vector3d(xMax, yMin+1, zMin));
 		lineObject.setProperties(boxOutlineProperty2);
 		objects.add(lineObject);
 		// 4
 		lineObject = new WorldObject();
+		lineObject.setColor(Color.WHITE);
 		lineObject.setPosition(new Vector3d(xMin, yMax-1, zMin));
 		lineObject.setProperties(boxOutlineProperty1);
 		objects.add(lineObject);
 		lineObject = new WorldObject();
+		lineObject.setColor(Color.WHITE);
 		lineObject.setPosition(new Vector3d(xMin, yMin+1, zMin));
 		lineObject.setProperties(boxOutlineProperty2);
 		objects.add(lineObject);
@@ -353,17 +365,39 @@ public class MDS extends World {
 
 	}
 
-	public void initialize() {
+	public void insertParticles(int numParticlesToInsert, double speed, double radius, double mass,
+			double xPosInsert, double yPosInsert, double zPosInsert,
+			Color particleColor) {
+		this.xPosInsert = xPosInsert;
+		this.yPosInsert = yPosInsert;
+		this.zPosInsert = zPosInsert;
+		this.numParticles += numParticlesToInsert;
+
+		// Add this color
+		int id = statGraphs.get(0).addUniqueObservation(particleColor); // Returns the id of the unique observation
+		statGraphs.get(1).addUniqueObservation(particleColor); // assert this equals id
+		colorIDmap.put(particleColor, id);
+
+		// Total aggrgate, always white
+		id = statGraphs.get(0).addUniqueObservation(Color.WHITE);
+		statGraphs.get(1).addUniqueObservation(Color.WHITE); // Assert this returns value same as id
+		colorIDmap.put(Color.WHITE, id);
+
 		ArrayList<WorldObject> objects = new ArrayList<>();
 
-		WorldObjectProperty moleculeProperty = new WorldObjectProperty();
-		moleculeProperty.addProperty(Color.CYAN);
-		moleculeProperty.setDrawMode(WorldObjectProperty.POINTS);
+		WorldObjectProperty particleProperty = new WorldObjectProperty();
+		particleProperty.setDrawMode(WorldObjectProperty.POINTS);
 
-		for(int j = 0; j < numMolecules; j++) {
-			WorldObject molecule = new WorldObject();
-			molecule.setProperties( moleculeProperty );
-			molecule.setPosition(new Vector3d(0.0, 0.0, 0.0));
+		for(WorldObject particle : this.objects) {
+			if(particle.getVelocity() != null)
+				objects.add(particle);
+		}
+
+		for(int j = 0; j < numParticlesToInsert; j++) {
+			WorldObject particle = new WorldObject();
+			particle.setColor(particleColor);
+			particle.setProperties(particleProperty);
+			particle.setPosition(new Vector3d(xPosInsert, yPosInsert, zPosInsert));
 
 			double xAxRot = j%3 == 0 ? 1 : 0;
 			double yAxRot = j%3 == 1 ? 1 : 0;
@@ -373,20 +407,14 @@ public class MDS extends World {
 			double yNegFac = j%6 == 1 ? -1 : 1;
 			double zNegFac = j%6 == 2 ? -1 : 1;
 
-			double equiDist = Math.sqrt(initSpeed * initSpeed / 3.0);
+			double equiDist = Math.sqrt(speed * speed / 3.0);
 
-			molecule.setVelocity(new Vector3d(equiDist * xNegFac, equiDist * yNegFac, equiDist * zNegFac).rotate(new Vector3d(xAxRot, yAxRot, zAxRot), j));
+			particle.setVelocity(new Vector3d(equiDist * xNegFac, equiDist * yNegFac, equiDist * zNegFac).rotate(new Vector3d(xAxRot, yAxRot, zAxRot), j));
 
-			molecule.setRadius(radius);
-			molecule.setMass(mass);
-			objects.add(molecule);
+			particle.setRadius(radius * scaleRadius);
+			particle.setMass(mass * scaleMass);
+			objects.add(particle);
 		}
-
-		totalUpdateCounter = 0;
-		simulationSeconds = 0;
-		correctTotalEnergy = 0.0;
-		momentumTransferred = 0.0;
-		cumulativePressure = 0.0;
 
 		synchronized(this.getObjects()) {
 			this.clear();
@@ -395,6 +423,42 @@ public class MDS extends World {
 			}
 			createAxes();
 		}
+	}
+
+	public void removeParticles(Color color) {
+		ArrayList<WorldObject> objects = new ArrayList<>();
+
+		WorldObjectProperty particleProperty = new WorldObjectProperty();
+		particleProperty.setDrawMode(WorldObjectProperty.POINTS);
+
+		numParticles = 0;
+		for(WorldObject particle : this.objects) {
+			if(particle.getVelocity() != null && !particle.getColor().equals(color)) {
+				objects.add(particle);
+				numParticles++;
+			}
+		}
+
+		synchronized(this.getObjects()) {
+			this.clear();
+			for(int j = 0; j < objects.size(); j++) {
+				this.addObject(objects.get(j));
+			}
+			createAxes();
+		}
+	}
+
+	public void initialize() {
+		// TODO for each molecule
+		numParticles = 0;
+		totalUpdateCounter = 0;
+		simulationSecondsPressure = 0.0000001;
+		simulationSeconds = 0.0000001;
+		totalImpartedMomentum = 0.0;
+		cumulativePressure = 0.0;
+
+		this.clear();
+		createAxes();
 	}
 
 	@Override
@@ -436,30 +500,62 @@ public class MDS extends World {
 	// Check collision with wall
 	private void checkCollision(WorldObject a, double timePassed) {
 		Vector3d nextPosition = a.getPosition().add(a.getVelocity().mul(timePassed));
-		if(nextPosition.getX() + a.getRadius() >= xMax || nextPosition.getX() - a.getRadius() <= xMin) {
-			a.getVelocity().setX(a.getVelocity().getX() * -1.0);
-			momentumTransferred += a.getVelocity().dot(a.getVelocity()) * a.getMass();
 
+		int id = colorIDmap.get(a.getColor());
+
+		/*
+		 * Reposition particle to inside the confinement dimensions
+		 */
+		Vector3d position = a.getPosition();
+		// X clamp
+		if(position.getX() + a.getRadius() > xMax)
+			a.getPosition().setX(xMax - a.getRadius());
+		else if(position.getX() - a.getRadius() < xMin)
+			a.getPosition().setX(xMin + a.getRadius());
+		// Y clamp
+		if(position.getY() + a.getRadius() > yMax)
+			a.getPosition().setY(yMax - a.getRadius());
+		else if(position.getY() - a.getRadius() < yMin)
+			a.getPosition().setY(yMin + a.getRadius());
+		// Z clamp
+		if(position.getZ() + a.getRadius() > zMax)
+			a.getPosition().setZ(zMax - a.getRadius());
+		else if(position.getZ() - a.getRadius() < zMin)
+			a.getPosition().setZ(zMin + a.getRadius());
+
+		double momentumImparted = 0.0;
+		if(nextPosition.getX() + a.getRadius() >= xMax || nextPosition.getX() - a.getRadius() <= xMin) {
+			a.getVelocity().setX(a.getVelocity().getX() * -1.0); // Change direction of Vx
+			momentumImparted += Math.abs(a.getVelocity().getX() * a.getMass()); // Momentum imparted based on X velocity
 			wallCollisions++;
+
+			synchronized(statGraphs.get(1).getObservations()) {
+				statGraphs.get(1).addObservation(id, momentumImparted); // TODO review
+				statGraphs.get(1).addObservation(colorIDmap.get(Color.WHITE), momentumImparted);
+			}
 		}
 		if(nextPosition.getY() + a.getRadius() >= yMax || nextPosition.getY() - a.getRadius() <= yMin) {
-			a.getVelocity().setY(a.getVelocity().getY() * -1.0);
-			momentumTransferred += a.getVelocity().dot(a.getVelocity()) * a.getMass();
-
+			a.getVelocity().setY(a.getVelocity().getY() * -1.0); // Change direction of Vy
+			momentumImparted += Math.abs(a.getVelocity().getY() * a.getMass()); // Momentum imparted based on Y velocity
 			wallCollisions++;
+
+			synchronized(statGraphs.get(1).getObservations()) {
+				statGraphs.get(1).addObservation(id, momentumImparted); // TODO review
+				statGraphs.get(1).addObservation(colorIDmap.get(Color.WHITE), momentumImparted);
+			}
 		}
 		if(nextPosition.getZ() + a.getRadius() >= zMax || nextPosition.getZ() - a.getRadius() <= zMin) {
-			a.getVelocity().setZ(a.getVelocity().getZ() * -1.0);
-			momentumTransferred += a.getVelocity().dot(a.getVelocity()) * a.getMass();
-
+			a.getVelocity().setZ(a.getVelocity().getZ() * -1.0); // Change direction of Vz
+			momentumImparted += Math.abs(a.getVelocity().getZ() * a.getMass()); // Momentum imparted based on Z velocity
 			wallCollisions++;
+
+			synchronized(statGraphs.get(1).getObservations()) {
+				statGraphs.get(1).addObservation(id, momentumImparted); // TODO review
+				statGraphs.get(1).addObservation(colorIDmap.get(Color.WHITE), momentumImparted);
+			}
 		}
 
-		if(timeKeepers.get(1).intValue() < 1000) {
-			statGraphs.get(1).addObservation(momentumTransferred); // TODO
-			Integer count = timeKeepers.remove(1);
-			timeKeepers.add(1, new Integer(count+1));
-		}
+		totalImpartedMomentum += momentumImparted;
 	}
 
 	// Returns true if two are colliding
@@ -567,7 +663,7 @@ public class MDS extends World {
 		return true;
 	}
 
-	// Resolve collisions for both objects. Be sure to leave out redundance in nested for loop
+	// Resolve collisions for both objects. Dont forget to remove redundance in nested loop when calling this!
 	private static void resolveCollision(WorldObject a, WorldObject b) {
 		// Directional vector along the point of contact
 		Vector3d n = a.getPosition().sub(b.getPosition());
@@ -587,104 +683,113 @@ public class MDS extends World {
 	}
 
 	@Override
-	public void sendSecondTick() {
-		ArrayList<String> labels = new ArrayList<>();
-		ArrayList<String> numbers = new ArrayList<>();
+	public void sendMiliSecondTick() {
+		milisecondsPassed++;
+		if(milisecondsPassed > 0) { // milisecondsPassed > 1000) {
 
-		synchronized(this.timeKeepers) {
-			int numTimeKeepers = timeKeepers.size();
-			timeKeepers.clear();
-			for(int j = 0; j < numTimeKeepers; j++) {
-				timeKeepers.add(new Integer(0));
-			}
-		}
-
-		synchronized(this.objects) {
-			// Simulation seconds
-			simulationSeconds++;
-			labels.add("\nSimulation Seconds:\n");
-			numbers.add(Integer.toString(simulationSeconds));
-
-			// Updates
-			labels.add("Simulation Updates:\n");
-			numbers.add(Long.toString(totalUpdateCounter) + "\n");
-
-			// N
-			labels.add("N:\n");
-			numbers.add(Integer.toString(objects.size() - 24) + "\n");
-
-			// Volume
-			double volume = calculateVolume();
-			labels.add("Volume:\n");
-			numbers.add(Double.toString(volume) + "\n");
-
-			// Total energy
-			double energy = calculateEnergy();
-			labels.add("Total Energy:\n");
-			numbers.add(Double.toString(energy));
-			// Error
-			correctTotalEnergy = initSpeed * initSpeed * mass * 0.5 * numMolecules;
-			labels.add("(actual):\n");
-			numbers.add(Double.toString(correctTotalEnergy) + "\n");
-
-			// RMS speed
-			double rmsSpeed = calculateRMSSpeed();
-			labels.add("RMS Speed:\n");
-			numbers.add(Double.toString(rmsSpeed));
-			// Error
-			labels.add("(actual):\n");
-			numbers.add(Double.toString(initSpeed) + "\n");
-
-			// Mean speed
-			double meanSpeed = calculateMeanSpeed();
-			labels.add("Mean Speed:\n");
-			numbers.add(Double.toString(meanSpeed));
-			// Error
-			double correctMeanSpeed = initSpeed / Math.sqrt(3.0 * Math.PI / 8.0);
-			labels.add("(actual):\n");
-			numbers.add(Double.toString(correctMeanSpeed) + "\n");
-
-			// FLAG
-			statGraphs.get(0).clearFlags();
-			statGraphs.get(0).flag("RMS Speed", rmsSpeed, Color.BLUE, 70);
-			statGraphs.get(0).flag("Mean Speed", meanSpeed, Color.RED, 40);
-
-			// Kinetic temperature
-			double temperature = calculateTemperature(meanSpeed);
-			labels.add("T(mean speed):\n");
-			numbers.add(Double.toString(temperature));
-			// Error
-			double correctTemperature = (initSpeed * initSpeed * mass) / (3.0 * BOLTZMANN_K);
-			labels.add("(actual):\n");
-			numbers.add(Double.toString(correctTemperature) + "\n");
-
-			// Average Pressure
 			double pressure = calculatePressure();
-			cumulativePressure += pressure;
-			labels.add("Average Pressure:\n");
-			numbers.add(Double.toString(cumulativePressure / simulationSeconds));
-			// Current Pressure
-			labels.add("Current Pressure:\n");
-			numbers.add(Double.toString(pressure) + "\n");
 
 			timelineGraphs.get(0).addPoint(pressure, 0);
+			timelineGraphs.get(0).addPoint(cumulativePressure / simulationSecondsPressure, 1);
 			timelineGraphs.get(1).addPoint(wallCollisions + moleculeCollisions, 0);
 			timelineGraphs.get(1).addPoint(moleculeCollisions, 1);
 			timelineGraphs.get(1).addPoint(wallCollisions, 2);
 
 			wallCollisions = 0;
 			moleculeCollisions = 0;
+
+			for(TimelineGraph2D timelineGraph : timelineGraphs) {
+				timelineGraph.updateContext();
+			}
+
+			milisecondsPassed = 0;
+		}
+	}
+
+	@Override
+	public void sendSecondTick() {
+		ArrayList<String> labels = new ArrayList<>();
+		ArrayList<String> numbers = new ArrayList<>();
+
+		synchronized(this.objects) {
+			// Simulation seconds
+			simulationSeconds++;
+			simulationSecondsPressure++;
+			labels.add("\nSimulation Seconds:\n");
+			numbers.add(Integer.toString((int)simulationSeconds));
+
+			// Updates
+			labels.add("Simulation Updates:\n");
+			numbers.add(Long.toString(totalUpdateCounter));
+
+			// N
+			labels.add("N:\n");
+			numbers.add(Integer.toString(numParticles));
+
+			// Volume
+			double volume = calculateVolume();
+			labels.add("Volume:\n");
+			numbers.add(Double.toString(volume));
+
+			// Total energy
+			double energy = calculateEnergy();
+			labels.add("Total Energy:\n");
+			numbers.add(Double.toString(energy)); // TODO
+			//			// Error
+			//			correctTotalEnergy = initSpeed * initSpeed * mass * 0.5 * numMolecules;
+			//			labels.add("(actual):\n");
+			//			numbers.add(Double.toString(correctTotalEnergy) + "\n");
+
+			// RMS speed
+			double rmsSpeed = calculateRMSSpeed();
+			labels.add("RMS Speed:\n");
+			numbers.add(Double.toString(rmsSpeed)); // TODO
+			//			// Error
+			//			labels.add("(actual):\n");
+			//			numbers.add(Double.toString(initSpeed) + "\n");
+
+			// Mean speed
+			double meanSpeed = calculateMeanSpeed();
+			labels.add("Mean Speed:\n");
+			numbers.add(Double.toString(meanSpeed)); // TODO
+			//			// Error
+			//			double correctMeanSpeed = initSpeed / Math.sqrt(3.0 * Math.PI / 8.0);
+			//			labels.add("(actual):\n");
+			//			numbers.add(Double.toString(correctMeanSpeed) + "\n");
+
+
+			// FLAG
+			statGraphs.get(0).clearFlags();
+			statGraphs.get(0).flag("RMS", rmsSpeed, Color.BLUE, 15);
+			statGraphs.get(0).flag("Mean", meanSpeed, Color.RED, 0);
+
+
+			//			// Kinetic temperature
+			//			double temperature = calculateTemperature(meanSpeed);
+			//			labels.add("T(mean speed):\n");
+			//			numbers.add(Double.toString(temperature));	// TODO
+			// Error
+			//			double correctTemperature = (initSpeed * initSpeed * mass) / (3.0 * BOLTZMANN_K);
+			//			labels.add("(actual):\n");
+			//			numbers.add(Double.toString(correctTemperature) + "\n");
+
+
+			// Average Pressure
+			cumulativePressure += currentPressure;
+			labels.add("Average Pressure:\n");
+			numbers.add(Double.toString(cumulativePressure / simulationSecondsPressure));
+			// Current Pressure
+			labels.add("Current Pressure:\n");
+			numbers.add(Double.toString(currentPressure) + "\n");
 		}
 
 		if(mdsgui != null)
 			mdsgui.setText(labels.toArray(), numbers.toArray());
 
-		for(StatLineGraph2D statGraph : statGraphs) {
-			statGraph.updateContext();
-		}
-
-		for(SlidingLineGraph2D timelineGraph : timelineGraphs) {
-			timelineGraph.updateContext();
+		for(DistributionGraph2D statGraph : statGraphs) {
+			synchronized(statGraph.getObservations()) {
+				statGraph.updateContext();
+			}
 		}
 	}
 
@@ -704,25 +809,31 @@ public class MDS extends World {
 		double areaXZ = (xMax - xMin) * (zMax - zMin);
 		double areaYZ = (yMax - yMin) * (zMax - zMin);
 		double totArea = 2.0 * (areaXY + areaXZ + areaYZ);
+		currentPressure = (2.0 * totalImpartedMomentum) / totArea;
 
-		double pressure = (2.0 * momentumTransferred) / totArea;
-		momentumTransferred = 0.0;
+		totalImpartedMomentum = 0.0;
 
-		return pressure;
+		return currentPressure;
 	}
 
 	private double calculateVolume() {
 		return (xMax - xMin) * (yMax - yMin) * (zMax - zMin);
 	}
 
-	private double calculateRMSSpeed() {
+	private double calculateAvgVelSq() {
 		double totalSpeed = 0.0;
 		for(WorldObject object : objects) {
 			if(object.getVelocity() == null) // Static objects have null velocity
 				continue;
+
 			totalSpeed += (object.getVelocity().dot(object.getVelocity()));
 		}
-		return Math.sqrt(totalSpeed / numMolecules);
+		return totalSpeed;
+	}
+
+	private double calculateRMSSpeed() {
+		double totalSpeed = calculateAvgVelSq();
+		return Math.sqrt(totalSpeed / numParticles);
 	}
 
 	private double calculateMeanSpeed() {
@@ -730,19 +841,34 @@ public class MDS extends World {
 		for(WorldObject object : objects) {
 			if(object.getVelocity() == null) // Static objects have null velocity
 				continue;
+
 			double speed = object.getVelocity().length();
 
-			statGraphs.get(0).addObservation(speed); // TODO
+			Color color = object.getColor();
+
+			// Sort according to molecule type (color)
+			int id = colorIDmap.get(color);
+			synchronized(statGraphs.get(0).getObservations()) {
+				statGraphs.get(0).addObservation(id, speed); // TODO review
+			}
+
+			// Aggregate total speed
+			id = colorIDmap.get(Color.WHITE);
+			synchronized(statGraphs.get(0).getObservations()) {
+				statGraphs.get(0).addObservation(id, speed); // TODO review
+			}
+			//			synchronized(statGraphs.get(2).getObservations()) {
+			//				statGraphs.get(2).addObservation(0, speed);; // TODO review
+			//			}
 
 			totalSpeed += speed;
 		}
-
-		return totalSpeed / numMolecules;
+		return totalSpeed / numParticles;
 	}
 
-	private double calculateTemperature(double meanSpeed) {
-		return (meanSpeed * meanSpeed * Math.PI * mass) / (8.0 * BOLTZMANN_K);
-	}
+	//		private double calculateTemperature(double meanSpeed) {
+	//			return (meanSpeed * meanSpeed * Math.PI * mass) / (8.0 * BOLTZMANN_K);
+	//		}
 
 	public static void main(String[] args) {
 		mdsgui = new MDSGUI();
