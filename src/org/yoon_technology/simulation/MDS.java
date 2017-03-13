@@ -132,7 +132,7 @@ public class MDS extends World {
 				object.setMass(object.getMass() * (scaleMass/lastScaleMass));
 			}
 		}
-		createAxes();
+		//		createAxes(); // TODO
 	}
 
 	private void createAxes() {
@@ -421,7 +421,7 @@ public class MDS extends World {
 			for(int j = 0; j < objects.size(); j++) {
 				this.addObject(objects.get(j));
 			}
-			createAxes();
+			//			createAxes(); // TODO
 		}
 	}
 
@@ -444,7 +444,7 @@ public class MDS extends World {
 			for(int j = 0; j < objects.size(); j++) {
 				this.addObject(objects.get(j));
 			}
-			createAxes();
+			//			createAxes(); // TODO
 		}
 	}
 
@@ -458,7 +458,7 @@ public class MDS extends World {
 		cumulativePressure = 0.0;
 
 		this.clear();
-		createAxes();
+		//		createAxes(); TODO
 	}
 
 	@Override

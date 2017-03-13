@@ -11,6 +11,7 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.Comparator;
 import java.util.ConcurrentModificationException;
 
 import javax.swing.JPanel;
@@ -105,27 +106,61 @@ public class Display extends JPanel implements ComponentListener {
 
 				WorldObject lastObject = null;	// For lines
 
+				// Depth buffer equivalent
+				world.getObjects().sort(new Comparator<WorldObject>() {
+					@Override
+					public int compare(WorldObject o1, WorldObject o2) {
+						Vector3d o1_ = engine.getCamera().project(
+								o1.getPosition().mul(scale),
+								(int)((double)getWidth()),			// offset x
+								(int)((double)getHeight()));		// offset y
+						Vector3d o2_ = engine.getCamera().project(
+								o2.getPosition().mul(scale),
+								(int)((double)getWidth()),			// offset x
+								(int)((double)getHeight()));		// offset y
+						double diff = (o1_.getZ() - o2_.getZ());
+						return diff == 0 ? 0 : (diff < 0 ? -1 : 1);
+					}
+				});
+				// "Fog" scale
+				double maxZ = 0.0000001;
+				double minZ = -0.0000001;
+				if(world.getObjects().size()!=0) {
+					Vector3d maxZPos = world.getObjects().get(world.getObjects().size()-1).getPosition();
+					maxZ = engine.getCamera().project(
+							maxZPos.mul(scale),
+							(int)((double)getWidth()),			// offset x
+							(int)((double)getHeight())).getZ();		// offset y
+					Vector3d minZPos = world.getObjects().get(0).getPosition();
+					minZ = engine.getCamera().project(
+							minZPos.mul(scale),
+							(int)((double)getWidth()),			// offset x
+							(int)((double)getHeight())).getZ();		// offset y
+
+				}
+
 				for(WorldObject object : world.getObjects()) {
-					Color objectColor = object.getColor();
-
-					double radius = object.getRadius() * scale;
-
+					// Get projection vector
 					Vector3d projectionVector = engine.getCamera().project(
 							object.getPosition().mul(scale),
 							(int)((double)getWidth()),			// offset x
 							(int)((double)getHeight()));		// offset y
 
+					// "Fog"
+					Color objectColor = object.getColor();
 					if(object.getVelocity() != null) {
-						double factor = Function.clamp(10000.0/object.getVelocity().dot(object.getVelocity()), 0.4, 1.0);
-						int red = (int) Function.clamp(factor * objectColor.getRed() * 2.0 + 50, 55.0, 250.0);
-						int green = (int) Function.clamp(factor * objectColor.getGreen() * 2.0 + 50, 55.0, 250.0);
-						int blue = (int) Function.clamp(factor * objectColor.getBlue() * 2.0 + 50, 55.0, 250.0);
+						double factor = Function.clamp((projectionVector.getZ()+maxZ)/(maxZ-minZ) * 2, 0.1, 1.0);
+						int red = (int) Function.clamp(factor * objectColor.getRed(), 55.0, 250.0);
+						int green = (int) Function.clamp(factor * objectColor.getGreen(), 55.0, 250.0);
+						int blue = (int) Function.clamp(factor * objectColor.getBlue(), 55.0, 250.0);
 						g.setColor(new Color(red, green, blue));
 					} else {
 						g.setColor(objectColor);
 					}
 
+
 					if(object.getProperties().getDrawMode() == WorldObjectProperty.POINTS) {
+						double radius = object.getRadius() * scale;
 						if(radius < 1)
 							radius = 1.0;
 
@@ -150,13 +185,10 @@ public class Display extends JPanel implements ComponentListener {
 
 					} else if(object.getProperties().getDrawMode() == WorldObjectProperty.END_LINES) {
 						if(lastObject == null) {
-							if(radius < 1)
-								radius = 2.0;
-
-							g.drawOval((int)(projectionVector.getX() - radius),
-									(int)(projectionVector.getY() - radius),
-									(int)(radius*2.0),
-									(int)(radius*2.0));
+							g.drawOval((int)(projectionVector.getX() - 10),
+									(int)(projectionVector.getY() - 10),
+									(int)(20),
+									(int)(20));
 
 						} else {
 							Vector3d projectionVector2 = engine.getCamera().project(

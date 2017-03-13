@@ -160,12 +160,12 @@ public class Window extends JFrame {
 		aMenuItem_1.setToolTipText("Family");
 		aMenuItem_1.addActionListener((ActionEvent event) -> {
 			JOptionPane.showMessageDialog(
-				null,
-				"For mother.\n\n"
-				+ "Jaewan Yun\n"
-				+ "JAY50@pitt.edu",
-				"Dedication",
-				-1);
+					null,
+					"For my family.\n\n"
+							+ "Jaewan Yun\n"
+							+ "JAY50@pitt.edu",
+							"Dedication",
+							-1);
 		});
 		about.add(aMenuItem_1);
 
