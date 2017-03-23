@@ -37,7 +37,7 @@ Heterogeneous environment implemented
 ![alt tag](https://github.com/Jaewan-Yun/Classical-Simulation/blob/master/pics/1_4.png)
 ![alt tag](https://github.com/Jaewan-Yun/Classical-Simulation/blob/master/pics/1_5.png)
 ![alt tag](https://github.com/Jaewan-Yun/Classical-Simulation/blob/master/pics/1_6.png)
-![alt tag](https://github.com/Jaewan-Yun/Classical-Simulation/blob/master/pics/1_7png.png)
+![alt tag](https://github.com/Jaewan-Yun/Classical-Simulation/blob/master/pics/1_7.png)
 
 <hr>
 
