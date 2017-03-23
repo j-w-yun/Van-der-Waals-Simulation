@@ -1,17 +1,13 @@
 # Classical-Simulation
 
-TODO list:
+TODO:
 
-	Permeability of piston-boxes to allow critical molecules to walk far distances
+	Selectively permeable cell linked-lists to improve efficiency?
 	
-	Improve OpenCL collision handling and appropriate more computation to GPU
+	Neural net implementation for each amino acid to fold peptides?
 	
-	Neural net implementation for each common solvent and macromolecule
-	
-	Cell linked-list implementation for short-range interactions
-	
-			
-			
+	Move all non-GUI Java computation to OpenCL
+
 <hr>
 
 Pistons implemented
