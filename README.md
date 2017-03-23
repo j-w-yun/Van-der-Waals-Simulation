@@ -2,13 +2,9 @@
 
 TODO list:
 
-Permeability of piston-boxes to allow critical molecules to walk far distances
+    Selectively permeable cell list
 
-Improve OpenCL collision handling and appropriate more computation to GPU
-
-Neural net implementation for each common solvent and macromolecule
-
-Cell linked-list implementation for short-range interactions
+    Improve OpenCL algorithm
 
 
 
