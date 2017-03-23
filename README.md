@@ -2,20 +2,23 @@
 
 TODO list:
 
-	Permeability of piston-boxes to allow critical molecules to walk far distances
-	
-	Improve OpenCL collision handling and appropriate more computation to GPU
-	
-	Neural net implementation for each common solvent and macromolecule
-	
-	Cell linked-list implementation for short-range interactions
-	
-			
-			
+Permeability of piston-boxes to allow critical molecules to walk far distances
+
+Improve OpenCL collision handling and appropriate more computation to GPU
+
+Neural net implementation for each common solvent and macromolecule
+
+Cell linked-list implementation for short-range interactions
+
+
+
 <hr>
 
 Pistons implemented
-			
+
+![alt tag](https://github.com/Jaewan-Yun/Classical-Simulation/blob/master/pics/4_1.png)
+![alt tag](https://github.com/Jaewan-Yun/Classical-Simulation/blob/master/pics/4_2.png)
+![alt tag](https://github.com/Jaewan-Yun/Classical-Simulation/blob/master/pics/4_3.png)
 ![alt tag](https://github.com/Jaewan-Yun/Classical-Simulation/blob/master/pics/4_1.png)
 ![alt tag](https://github.com/Jaewan-Yun/Classical-Simulation/blob/master/pics/4_2.png)
 ![alt tag](https://github.com/Jaewan-Yun/Classical-Simulation/blob/master/pics/4_3.png)

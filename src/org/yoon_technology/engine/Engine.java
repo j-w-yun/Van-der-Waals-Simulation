@@ -17,7 +17,7 @@ import org.yoon_technology.math.Vector3d;
 
 public class Engine {
 
-	public static final double SECONDS_PER_UPDATE = 1.0 / 60.0;
+	private final double SECONDS_PER_UPDATE;
 	private ArrayList<Display> displays;
 	private ArrayList<World> worlds;
 	private Camera camera;
@@ -29,9 +29,14 @@ public class Engine {
 	private int fpsCounter = 0;
 	private int upsCounter = 0;
 
-	public Engine() {
+	public Engine(double updatesPerSecond) {
 		displays = new ArrayList<>();
 		worlds = new ArrayList<>();
+		SECONDS_PER_UPDATE = 1.0 / updatesPerSecond;
+	}
+
+	public double getSecondsPerUpdate() {
+		return SECONDS_PER_UPDATE;
 	}
 
 	public void addDisplay(Display display) {
@@ -82,10 +87,16 @@ public class Engine {
 	}
 
 	public boolean focusComputation() {
+		for(Display display : displays) {
+			display.setBeautify(false);
+		}
 		return focusComputation != true ? focusComputation = true : false;
 	}
 
 	public boolean focusVisual() {
+		for(Display display : displays) {
+			display.setBeautify(true);
+		}
 		return focusComputation == true ? !(focusComputation = false) : false;
 	}
 
@@ -114,41 +125,42 @@ public class Engine {
 		double systemMiliSeconds = 0.0;
 		double systemSeconds = 0.0;
 
+		Concurrency.WorkQueue workQueue = new Concurrency.WorkQueue(128);
+
 		// Main loop
 		while(running) {
-
 			delta += (leadingTime - laggingTime) / 1000000000.0;
 			laggingTime = leadingTime;
 			leadingTime = System.nanoTime();
 
-			boolean idle = true;
-
 			while(delta >= SECONDS_PER_UPDATE) {
-				Window.input(this, SECONDS_PER_UPDATE);
+				workQueue.execute(() -> {
+					Window.input(this, SECONDS_PER_UPDATE);
+				});
 
 				if(!paused) {
 					update(SECONDS_PER_UPDATE);
 					upsCounter++;
 
 					// Milisecond tick
-					systemMiliSeconds += SECONDS_PER_UPDATE * 1000.0;
-					if(systemMiliSeconds >= 1.0) {
-						new Thread(() -> {
-							for(World world : worlds) {
+					systemMiliSeconds += SECONDS_PER_UPDATE;
+					while(systemMiliSeconds >= 0.001) {
+						for(World world : worlds) {
+							workQueue.execute(() -> {
 								world.sendMiliSecondTick();
-							}
-						}).start();
-						systemMiliSeconds = 0;
+							});
+						}
+						systemMiliSeconds -= 0.001;
 					}
 
 					// Second tick
 					systemSeconds += SECONDS_PER_UPDATE;
 					if(systemSeconds >= 1.0) {
-						new Thread(() -> {
-							for(World world : worlds) {
+						for(World world : worlds) {
+							workQueue.execute(() -> {
 								world.sendSecondTick();
-							}
-						}).start();
+							});
+						}
 						systemSeconds = 0;
 					}
 				}
@@ -163,19 +175,17 @@ public class Engine {
 				}
 
 				if(!focusComputation) {
-					render();
+					workQueue.execute(() -> {
+						render();
+					});
 					fpsCounter++;
 				}
-				idle = false;
 			}
+
 			if(focusComputation) {
 				render();
 				fpsCounter++;
 			}
-
-			// Sleep if undemanding
-			//			if(idle)
-			//				try { Thread.sleep(10); } catch (InterruptedException e) {}
 		}
 	}
 

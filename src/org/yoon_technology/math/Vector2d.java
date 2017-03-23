@@ -12,8 +12,8 @@ public class Vector2d implements Serializable {
 
 	private static final long serialVersionUID = 10L;
 
-	protected double X;
-	protected double Y;
+	protected volatile double X;
+	protected volatile double Y;
 
 	public Vector2d(double X, double Y) {
 		this.X = X;

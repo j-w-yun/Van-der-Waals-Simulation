@@ -9,7 +9,7 @@ package org.yoon_technology.math;
 public class Vector3d extends Vector2d {
 
 	private static final long serialVersionUID = 11L;
-	private double Z;
+	protected volatile double Z;
 
 	public Vector3d(double X, double Y, double Z) {
 		super(X, Y);
@@ -117,30 +117,30 @@ public class Vector3d extends Vector2d {
 	}
 
 	@Override
-	public double getX() {
+	public synchronized double getX() {
 		return this.X;
 	}
 
 	@Override
-	public void setX(double x) {
+	public synchronized void setX(double x) {
 		this.X = x;
 	}
 
 	@Override
-	public double getY() {
+	public synchronized double getY() {
 		return this.Y;
 	}
 
 	@Override
-	public void setY(double y) {
+	public synchronized void setY(double y) {
 		this.Y = y;
 	}
 
-	public double getZ() {
+	public synchronized double getZ() {
 		return this.Z;
 	}
 
-	public void setZ(double z) {
+	public synchronized void setZ(double z) {
 		this.Z = z;
 	}
 

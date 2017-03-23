@@ -6,16 +6,20 @@ import java.awt.KeyboardFocusManager;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 
 import javax.swing.BorderFactory;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 
 import org.yoon_technology.engine.Engine;
+import org.yoon_technology.gpu.Collision;
+import org.yoon_technology.gpu.GPU;
 import org.yoon_technology.math.Vector3d;
 
 /**
@@ -53,6 +57,27 @@ public class Window extends JFrame {
 
 		KeyboardFocusManager manager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
 		manager.addKeyEventDispatcher(new MyDispatcher());
+
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		addWindowListener(new WindowListener() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				GPU.shutdown();
+				Collision.shutdown();
+			}
+			@Override
+			public void windowClosed(WindowEvent e) {}
+			@Override
+			public void windowOpened(WindowEvent e) {}
+			@Override
+			public void windowIconified(WindowEvent e) {}
+			@Override
+			public void windowDeiconified(WindowEvent e) {}
+			@Override
+			public void windowDeactivated(WindowEvent e) {}
+			@Override
+			public void windowActivated(WindowEvent e) {}
+		});
 	}
 
 	public static void create() {
@@ -63,7 +88,7 @@ public class Window extends JFrame {
 		getInstance(title);
 	}
 
-	public static void addPanel(JPanel panel, String layoutType) {
+	public static void addToWindow(JComponent panel, String layoutType) {
 		instance.add(panel, layoutType);
 	}
 
@@ -96,7 +121,6 @@ public class Window extends JFrame {
 		int y = (int) ((dimension.getHeight() - instance.getHeight()) / 2);
 		instance.setLocation(x, y - 15);
 	}
-
 
 	private class MyDispatcher implements KeyEventDispatcher {
 		@Override
@@ -147,6 +171,7 @@ public class Window extends JFrame {
 		fMenuItem_1.setMnemonic(KeyEvent.VK_E);
 		fMenuItem_1.setToolTipText("Close application");
 		fMenuItem_1.addActionListener((ActionEvent event) -> {
+			GPU.shutdown();
 			System.exit(0);
 		});
 		file.add(fMenuItem_1);
@@ -179,4 +204,49 @@ public class Window extends JFrame {
 		menubar.setOpaque(true);
 		menubar.setBorder(BorderFactory.createEmptyBorder());
 	}
+
+	//	private void initInteraction() {
+	//		final Point previousPoint = new Point();
+	//
+	//		imageComponent.addMouseMotionListener(new MouseMotionListener() {
+	//			@Override
+	//			public void mouseDragged(MouseEvent e) {
+	//				int dx = previousPoint.x - e.getX();
+	//				int dy = previousPoint.y - e.getY();
+	//
+	//				float wdx = x1 - x0;
+	//				float wdy = y1 - y0;
+	//
+	//				x0 += (dx / 150.0f) * wdx;
+	//				x1 += (dx / 150.0f) * wdx;
+	//
+	//				y0 += (dy / 150.0f) * wdy;
+	//				y1 += (dy / 150.0f) * wdy;
+	//
+	//				previousPoint.setLocation(e.getX(), e.getY());
+	//
+	//				updateImage();
+	//			}
+	//
+	//			@Override
+	//			public void mouseMoved(MouseEvent e) {
+	//				previousPoint.setLocation(e.getX(), e.getY());
+	//			}
+	//		});
+	//
+	//		imageComponent.addMouseWheelListener(new MouseWheelListener() {
+	//			@Override
+	//			public void mouseWheelMoved(MouseWheelEvent e) {
+	//				float dx = x1 - x0;
+	//				float dy = y1 - y0;
+	//				float delta = e.getWheelRotation() / 20.0f;
+	//				x0 += delta * dx;
+	//				x1 -= delta * dx;
+	//				y0 += delta * dy;
+	//				y1 -= delta * dy;
+	//
+	//				updateImage();
+	//			}
+	//		});
+	//	}
 }

@@ -16,6 +16,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.SwingConstants;
@@ -42,26 +43,29 @@ import org.yoon_technology.math.Vector3d;
 public class MDSGUI {
 
 	private Engine mdsEngine;
-	private Engine graphEngine;
-	private DistributionGraph2D distributionGraph1;
-	//	private DistributionGraph2D distributionGraph1_1;
-	private DistributionGraph2D distributionGraph2;
+	private Engine graphEngine_1;
+	private Engine graphEngine_2;
+	private DistributionGraph2D distributionGraph1_1;
+	private DistributionGraph2D distributionGraph1_2;
 	//	private DistributionGraph2D distributionGraph2_1;
-	private TimelineGraph2D timelineGraph3;
-	private TimelineGraph2D timelineGraph4;
+	//	private DistributionGraph2D distributionGraph2_2;
+	private TimelineGraph2D timelineGraph1_3;
+	private TimelineGraph2D timelineGraph1_4;
+	private TimelineGraph2D timelineGraph2_1;
+	private TimelineGraph2D timelineGraph2_2;
 	private MDS mds;
 	private Display mdsDisplay;
-	private Display statDisplay1;
-	//	private Display statDisplay1_1;
-	private Display statDisplay2;
-	//	private Display statDisplay2_1;
-	private Display statDisplay3;
-	private Display statDisplay4;
+	private Display statDisplay1_1;
+	private Display statDisplay1_2;
+	private Display statDisplay1_3;
+	private Display statDisplay1_4;
+	private Display statDisplay2_1;
+	private Display statDisplay2_2;
 
 	private JPanel deleteParticleButtonPanel;
 	private JPanel mdsPanel;
 	private JPanel sidePanel;
-	private JPanel statPanel;
+	private JTabbedPane statTab;
 
 	private JTextPane sidePanel_textPane;
 
@@ -82,7 +86,7 @@ public class MDSGUI {
 	private ArrayList<JButton> deleteParticleButtons = new ArrayList<>();
 
 	private void createMdsDisplay(int width, int height) {
-		mdsEngine = new Engine();
+		mdsEngine = new Engine(60);
 		mdsEngine.addWorld(mds);
 		mdsEngine.addCamera(new Vector3d(0.0, 0.0, 0.0), Camera.ORTHOGRAPHIC_PROJECTION);
 		mdsEngine.getCamera().setOrientation(new Vector3d(0.0, 0.0, 0.0));
@@ -106,6 +110,25 @@ public class MDSGUI {
 					rotateButton.setText("S");
 				else
 					rotateButton.setText("R");
+			}
+		});
+		mds.GPUOn(true);
+		JButton gpuAccelButton = new JButton("GPU On");
+		gpuAccelButton.setFont(new Font("Lucida Sans Typewriter", Font.PLAIN, 14));
+		gpuAccelButton.setFocusPainted(false);
+		gpuAccelButton.setBackground(Color.BLACK);
+		gpuAccelButton.setForeground(Color.WHITE);
+		gpuAccelButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if(!mds.isGPUOn()) {
+					mds.GPUOn(true);
+					gpuAccelButton.setText("GPU On");
+
+				} else {
+					mds.GPUOn(false);
+					gpuAccelButton.setText("GPU Off");
+				}
 			}
 		});
 		JButton focusComputationButton = new JButton("Rendering Focused");
@@ -151,6 +174,7 @@ public class MDSGUI {
 		});
 
 		mdsDisplay.add(focusComputationButton);
+		mdsDisplay.add(gpuAccelButton);
 		mdsDisplay.add(rotateButton);
 		mdsDisplay.add(zoomInButton);
 		mdsDisplay.add(zoomOutButton);
@@ -159,48 +183,56 @@ public class MDSGUI {
 	}
 
 	private void createStatDisplay(int width, int height) {
-		graphEngine = new Engine();
+		graphEngine_1 = new Engine(60);
+		graphEngine_2 = new Engine(60);
 
-		graphEngine.addWorld(distributionGraph1);
-		graphEngine.addWorld(distributionGraph2);
-		//		graphEngine.addWorld(distributionGraph1_1);
-		//		graphEngine.addWorld(distributionGraph2_1);
-		graphEngine.addWorld(timelineGraph3);
-		graphEngine.addWorld(timelineGraph4);
-		graphEngine.addCamera(new Vector3d(0.0, 0.0, 0.0), Camera.ORTHOGRAPHIC_PROJECTION);
-		graphEngine.getCamera().setRotatable(false);
-		graphEngine.rotateOn(false);
+		graphEngine_1.addWorld(distributionGraph1_1);
+		graphEngine_1.addWorld(distributionGraph1_2);
+		graphEngine_1.addWorld(timelineGraph1_3);
+		graphEngine_1.addWorld(timelineGraph1_4);
 
-		statDisplay1 = new Display(width, height, graphEngine);
-		statDisplay1.setWorld(distributionGraph1);
-		statDisplay1.setLayout(new FlowLayout(SwingConstants.RIGHT));
-		statDisplay1.setBackground(Color.BLACK);
-		statDisplay1.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
-		statDisplay2 = new Display(width, height, graphEngine);
-		statDisplay2.setWorld(distributionGraph2);
-		statDisplay2.setLayout(new FlowLayout(SwingConstants.RIGHT));
-		statDisplay2.setBackground(Color.BLACK);
-		statDisplay2.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
-		//		statDisplay1_1 = new Display(width, height, graphEngine);
-		//		statDisplay1_1.setWorld(distributionGraph1_1);
-		//		statDisplay1_1.setLayout(new FlowLayout(SwingConstants.RIGHT));
-		//		statDisplay1_1.setBackground(Color.BLACK);
-		//		statDisplay1_1.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
-		//		statDisplay2_1 = new Display(width, height, graphEngine);
-		//		statDisplay2_1.setWorld(distributionGraph2_1);
-		//		statDisplay2_1.setLayout(new FlowLayout(SwingConstants.RIGHT));
-		//		statDisplay2_1.setBackground(Color.BLACK);
-		//		statDisplay2_1.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
-		statDisplay3 = new Display(width, height, graphEngine);
-		statDisplay3.setWorld(timelineGraph3);
-		statDisplay3.setLayout(new FlowLayout(SwingConstants.RIGHT));
-		statDisplay3.setBackground(Color.BLACK);
-		statDisplay3.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
-		statDisplay4 = new Display(width, height, graphEngine);
-		statDisplay4.setWorld(timelineGraph4);
-		statDisplay4.setLayout(new FlowLayout(SwingConstants.RIGHT));
-		statDisplay4.setBackground(Color.BLACK);
-		statDisplay4.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
+		graphEngine_2.addWorld(timelineGraph2_1);
+		graphEngine_2.addWorld(timelineGraph2_2);
+
+		graphEngine_1.addCamera(new Vector3d(0.0, 0.0, 0.0), Camera.ORTHOGRAPHIC_PROJECTION);
+		graphEngine_1.getCamera().setRotatable(false);
+		graphEngine_1.rotateOn(false);
+
+		graphEngine_2.addCamera(new Vector3d(0.0, 0.0, 0.0), Camera.ORTHOGRAPHIC_PROJECTION);
+		graphEngine_2.getCamera().setRotatable(false);
+		graphEngine_2.rotateOn(false);
+
+		statDisplay1_1 = new Display(width, height, graphEngine_1);
+		statDisplay1_1.setWorld(distributionGraph1_1);
+		statDisplay1_1.setLayout(new FlowLayout(SwingConstants.RIGHT));
+		statDisplay1_1.setBackground(Color.BLACK);
+		statDisplay1_1.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
+		statDisplay1_2 = new Display(width, height, graphEngine_1);
+		statDisplay1_2.setWorld(distributionGraph1_2);
+		statDisplay1_2.setLayout(new FlowLayout(SwingConstants.RIGHT));
+		statDisplay1_2.setBackground(Color.BLACK);
+		statDisplay1_2.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
+		statDisplay1_3 = new Display(width, height, graphEngine_1);
+		statDisplay1_3.setWorld(timelineGraph1_3);
+		statDisplay1_3.setLayout(new FlowLayout(SwingConstants.RIGHT));
+		statDisplay1_3.setBackground(Color.BLACK);
+		statDisplay1_3.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
+		statDisplay1_4 = new Display(width, height, graphEngine_1);
+		statDisplay1_4.setWorld(timelineGraph1_4);
+		statDisplay1_4.setLayout(new FlowLayout(SwingConstants.RIGHT));
+		statDisplay1_4.setBackground(Color.BLACK);
+		statDisplay1_4.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
+
+		statDisplay2_1 = new Display(width, height, graphEngine_2);
+		statDisplay2_1.setWorld(timelineGraph2_1);
+		statDisplay2_1.setLayout(new FlowLayout(SwingConstants.RIGHT));
+		statDisplay2_1.setBackground(Color.BLACK);
+		statDisplay2_1.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
+		statDisplay2_2 = new Display(width, height, graphEngine_2);
+		statDisplay2_2.setWorld(timelineGraph2_2);
+		statDisplay2_2.setLayout(new FlowLayout(SwingConstants.RIGHT));
+		statDisplay2_2.setBackground(Color.BLACK);
+		statDisplay2_2.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
 
 		JButton reset1Button = new JButton("RESET");
 		reset1Button.setFont(new Font("Lucida Sans Typewriter", Font.PLAIN, 12));
@@ -210,7 +242,7 @@ public class MDSGUI {
 		reset1Button.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				distributionGraph1.clearObservations();
+				distributionGraph1_1.clearObservations();
 			}
 		});
 
@@ -222,7 +254,7 @@ public class MDSGUI {
 		reset2Button.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				distributionGraph2.clearObservations();
+				distributionGraph1_2.clearObservations();
 			}
 		});
 
@@ -234,7 +266,7 @@ public class MDSGUI {
 		//		reset1Button.addActionListener(new ActionListener() {
 		//			@Override
 		//			public void actionPerformed(ActionEvent e) {
-		//				distributionGraph1_1.clearObservations();
+		//				distributionGraph1_1_1.clearObservations();
 		//			}
 		//		});
 		//
@@ -246,7 +278,7 @@ public class MDSGUI {
 		//		reset2_1Button.addActionListener(new ActionListener() {
 		//			@Override
 		//			public void actionPerformed(ActionEvent e) {
-		//				distributionGraph2_1.clearObservations();
+		//				distributionGraph1_2_1.clearObservations();
 		//			}
 		//		});
 
@@ -263,18 +295,19 @@ public class MDSGUI {
 			}
 		});
 
-		statDisplay1.add(reset1Button); // Reset button for each
-		statDisplay2.add(reset2Button);
-		//		statDisplay1_1.add(reset1_1Button);
-		//		statDisplay2_1.add(reset2_1Button);
-		statDisplay3.add(resetAvgButton);
+		statDisplay1_1.add(reset1Button); // Reset button for each
+		statDisplay1_2.add(reset2Button);
+		//		statDisplay1_1_1.add(reset1_1Button);
+		//		statDisplay1_2_1.add(reset2_1Button);
+		statDisplay1_3.add(resetAvgButton);
 
-		graphEngine.addDisplay(statDisplay1);
-		graphEngine.addDisplay(statDisplay2);
-		graphEngine.addDisplay(statDisplay3);
-		graphEngine.addDisplay(statDisplay4);
-		//		graphEngine.addDisplay(statDisplay1_1);
-		//		graphEngine.addDisplay(statDisplay2_1);
+		graphEngine_1.addDisplay(statDisplay1_1);
+		graphEngine_1.addDisplay(statDisplay1_2);
+		graphEngine_1.addDisplay(statDisplay1_3);
+		graphEngine_1.addDisplay(statDisplay1_4);
+
+		graphEngine_2.addDisplay(statDisplay2_1);
+		graphEngine_2.addDisplay(statDisplay2_2);
 	}
 
 	private void populateWindow() {
@@ -284,9 +317,9 @@ public class MDSGUI {
 		populateSidePanel();
 		populateStatPanel();
 
-		Window.addPanel(mdsPanel, BorderLayout.WEST);
-		Window.addPanel(sidePanel, BorderLayout.EAST);
-		Window.addPanel(statPanel, BorderLayout.CENTER);
+		Window.addToWindow(mdsPanel, BorderLayout.WEST);
+		Window.addToWindow(sidePanel, BorderLayout.EAST);
+		Window.addToWindow(statTab, BorderLayout.CENTER);
 
 		Window.start();
 	}
@@ -363,8 +396,6 @@ public class MDSGUI {
 		scaleMass.setBorder(BorderFactory.createEmptyBorder());
 		scaleMass.setText(Double.toString(mds.scaleMass));
 
-
-
 		rowOnePanel.add(dimensionLabel);
 		rowOnePanel.add(xDimLabel);
 		rowOnePanel.add(xDim);
@@ -372,7 +403,6 @@ public class MDSGUI {
 		rowOnePanel.add(yDim);
 		rowOnePanel.add(zDimLabel);
 		rowOnePanel.add(zDim);
-		//		rowOnePanel.add(updateSettingsButton);
 
 		/*
 		 * Row # 2
@@ -485,7 +515,7 @@ public class MDSGUI {
 		/*
 		 * Row # 5
 		 */
-		JPanel rowFivePanel = new JPanel(new GridLayout(0, 2));
+		JPanel rowFivePanel = new JPanel(new GridLayout(0, 3));
 		rowFivePanel.setBackground(Color.GRAY);
 		rowFivePanel.setPreferredSize(new Dimension(300, 0));
 
@@ -505,6 +535,61 @@ public class MDSGUI {
 				}
 			}
 		});
+		JButton temporaryButton = new JButton("<HTML>TEMPORARY<br>BUTTON</HTML>");
+		temporaryButton.setBackground(new Color(1, 20, 26));
+		temporaryButton.setForeground(Color.WHITE);
+		temporaryButton.setFocusPainted(false);
+		temporaryButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				double xDim_ = 0.0, yDim_ = 0.0, zDim_ = 0.0;
+				try {
+					xDim_ = Double.parseDouble(xDim.getText());
+				} catch (NumberFormatException nfe) {}
+				try {
+					yDim_ = Double.parseDouble(yDim.getText());
+				} catch (NumberFormatException nfe) {}
+				try {
+					zDim_ = Double.parseDouble(zDim.getText());
+				} catch (NumberFormatException nfe) {}
+
+				double scaleRadius_ = 0.0, scaleMass_ = 0.0;
+				try {
+					scaleRadius_ = Double.parseDouble(scaleRadius.getText());
+				} catch (NumberFormatException nfe) {}
+				try {
+					scaleMass_ = Double.parseDouble(scaleMass.getText());
+				} catch (NumberFormatException nfe) {}
+
+				mds.updateWorldSettings(scaleRadius_, scaleMass_,
+						(xDim_ - (xDim_/2)),
+						-(xDim_/2),
+						(yDim_ - (yDim_/2)),
+						-(yDim_/2),
+						(zDim_ - (zDim_/2)),
+						-(zDim_/2));
+
+				// Remove all particle type buttons
+				deleteParticleButtons.clear();
+				deleteParticleButtonPanel.removeAll();
+				deleteParticleButtonPanel.revalidate();
+				deleteParticleButtonPanel.repaint();
+
+				mds.initialize(); // Restarts
+				mdsDisplay.setScale(mds.resized(mdsDisplay.getWidth(), mdsDisplay.getHeight()));
+
+				mds.insertParticles(80, 600, 10.0, 1, 0, 0, 0, Color.RED);
+				mds.insertParticles(80, 600, 10.0, 1, 500, 500, 500, Color.YELLOW);
+				mds.insertParticles(80, 600, 10.0, 1, -500, 500, 500, Color.YELLOW);
+				mds.insertParticles(80, 600, 10.0, 1, 500, -500, 500, Color.YELLOW);
+				mds.insertParticles(80, 600, 10.0, 1, -500, -500, 500, Color.YELLOW);
+				mds.insertParticles(80, 600, 10.0, 1, 500, 500, -500, Color.CYAN);
+				mds.insertParticles(80, 600, 10.0, 1, -500, 500, -500, Color.CYAN);
+				mds.insertParticles(80, 600, 10.0, 1, 500, -500, -500, Color.CYAN);
+				mds.insertParticles(80, 600, 10.0, 1, -500, -500, -500, Color.CYAN);
+			}
+		});
+
 		JButton startButton = new JButton("REMOVE ALL");
 		startButton.setBackground(new Color(1, 20, 26));
 		startButton.setForeground(Color.WHITE);
@@ -552,6 +637,7 @@ public class MDSGUI {
 
 
 		rowFivePanel.add(pauseOrResumeButton);
+		rowFivePanel.add(temporaryButton);
 		rowFivePanel.add(startButton);
 
 		/*
@@ -711,14 +797,24 @@ public class MDSGUI {
 	}
 
 	private void populateStatPanel() {
-		statPanel = new JPanel(new GridLayout(0, 1));
 
-		statPanel.add(statDisplay1);
-		statPanel.add(statDisplay2);
-		//		statPanel.add(statDisplay1_1);
-		//		statPanel.add(statDisplay2_1);
-		statPanel.add(statDisplay3);
-		statPanel.add(statDisplay4);
+		JPanel statPanel1 = new JPanel(new GridLayout(0, 1));
+		JPanel statPanel2 = new JPanel(new GridLayout(0, 1));
+
+		statPanel1.add(statDisplay1_1);
+		statPanel1.add(statDisplay1_2);
+		statPanel1.add(statDisplay1_3);
+		statPanel1.add(statDisplay1_4);
+
+		statPanel2.add(statDisplay2_1);
+		statPanel2.add(statDisplay2_2);
+
+		statTab = new JTabbedPane();
+		statTab.setBackground(Color.BLACK);
+		statTab.setOpaque(true);
+		statTab.setBorder(BorderFactory.createEmptyBorder());
+		statTab.add("Tab1", statPanel1);
+		statTab.add("Tab2", statPanel2);
 	}
 
 	private static Color getColor(String colorName) {
@@ -754,8 +850,7 @@ public class MDSGUI {
 			StyleConstants.setForeground(numberAttrib, Color.WHITE);
 
 			if(labels.length != numbers.length)
-				System.err.println("Labels length does not match numbers length!");
-
+				System.out.println("Labels length does not match numbers length!");
 
 			for(int j = 0; j < labels.length; j++) {
 				doc.setParagraphAttributes(doc.getLength(), 1, labelAttrib, false);
@@ -778,43 +873,56 @@ public class MDSGUI {
 	public MDSGUI() {
 		mds = new MDS();
 		mds.restoreWorldSettings();
+		//		mds.initialize();
+
+		distributionGraph1_1 = new DistributionGraph2D("Speed Distribution");
+		distributionGraph1_1.restoreWorldSettings();
+		distributionGraph1_1.initialize();
+
+		//		distributionGraph1_1_1 = new DistributionGraph2D("Total Speed");
+		//		distributionGraph1_1_1.restoreWorldSettings();
+		//		distributionGraph1_1_1.initialize();
+
+		distributionGraph1_2 = new DistributionGraph2D("Transferred Momentum Per Collision Distribution");
+		distributionGraph1_2.restoreWorldSettings();
+		distributionGraph1_2.initialize();
+
+		//		distributionGraph1_2_1 = new DistributionGraph2D("Total Rate of Momentum Transfer");
+		//		distributionGraph1_2_1.restoreWorldSettings();
+		//		distributionGraph1_2_1.initialize();
+
+		timelineGraph1_3 = new TimelineGraph2D("Pressure");
+		timelineGraph1_3.restoreWorldSettings();
+		timelineGraph1_3.initialize();
+		timelineGraph1_3.addUniqueObservation("Cur", Color.BLUE);
+		timelineGraph1_3.addUniqueObservation("Avg", Color.WHITE);
+
+		timelineGraph1_4 = new TimelineGraph2D("Collisions");
+		timelineGraph1_4.restoreWorldSettings();
+		timelineGraph1_4.initialize();
+		timelineGraph1_4.addUniqueObservation("Total", Color.BLUE);
+		timelineGraph1_4.addUniqueObservation("Intermol.", Color.WHITE);
+		timelineGraph1_4.addUniqueObservation("Wall", Color.MAGENTA);
+
+		timelineGraph2_1 = new TimelineGraph2D("TEST");
+		timelineGraph2_1.restoreWorldSettings();
+		timelineGraph2_1.initialize();
+		timelineGraph2_1.addUniqueObservation("Total", Color.BLUE);
+
+		timelineGraph2_2 = new TimelineGraph2D("TEST");
+		timelineGraph2_2.restoreWorldSettings();
+		timelineGraph2_2.initialize();
+		timelineGraph2_2.addUniqueObservation("Total", Color.BLUE);
+
+		mds.addStatGraph(distributionGraph1_1);
+		mds.addStatGraph(distributionGraph1_2);
+		mds.addTimelineGraph(timelineGraph1_3);
+		mds.addTimelineGraph(timelineGraph1_4);
+
+		mds.addTimelineGraph(timelineGraph2_1);
+		mds.addTimelineGraph(timelineGraph2_2);
+
 		mds.initialize();
-
-		distributionGraph1 = new DistributionGraph2D("Speed Distribution");
-		distributionGraph1.restoreWorldSettings();
-		distributionGraph1.initialize();
-
-		//		distributionGraph1_1 = new DistributionGraph2D("Total Speed");
-		//		distributionGraph1_1.restoreWorldSettings();
-		//		distributionGraph1_1.initialize();
-
-		distributionGraph2 = new DistributionGraph2D("Transferred Momentum Distribution");
-		distributionGraph2.restoreWorldSettings();
-		distributionGraph2.initialize();
-
-		//		distributionGraph2_1 = new DistributionGraph2D("Total Rate of Momentum Transfer");
-		//		distributionGraph2_1.restoreWorldSettings();
-		//		distributionGraph2_1.initialize();
-
-		timelineGraph3 = new TimelineGraph2D("Current Pressure");
-		timelineGraph3.restoreWorldSettings();
-		timelineGraph3.initialize();
-		timelineGraph3.addUniqueObservation("Cur", Color.BLUE);
-		timelineGraph3.addUniqueObservation("Avg", Color.WHITE);
-
-		timelineGraph4 = new TimelineGraph2D("Collisions Per Milisecond");
-		timelineGraph4.restoreWorldSettings();
-		timelineGraph4.initialize();
-		timelineGraph4.addUniqueObservation("Total", Color.BLUE);
-		timelineGraph4.addUniqueObservation("Inter", Color.WHITE);
-		timelineGraph4.addUniqueObservation("Wall", Color.MAGENTA);
-
-		mds.addStatGraph(distributionGraph1);
-		mds.addStatGraph(distributionGraph2);
-		//		mds.addStatGraph(distributionGraph1_1);
-		//		mds.addStatGraph(distributionGraph2_1);
-		mds.addTimelineGraph(timelineGraph3);
-		mds.addTimelineGraph(timelineGraph4);
 
 		createMdsDisplay(400, 400);
 		createStatDisplay(500, 150);
@@ -836,9 +944,11 @@ public class MDSGUI {
 		}).start();
 
 		new Thread(() -> {
-			graphEngine.start();
+			graphEngine_1.start();
 		}).start();
 
-		// TODO
+		new Thread(() -> {
+			graphEngine_2.start();
+		}).start();
 	}
 }

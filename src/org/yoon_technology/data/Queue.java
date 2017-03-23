@@ -1,15 +1,15 @@
 package org.yoon_technology.data;
 
+/**
+ * Refer to LICENSE
+ *
+ * @author Jaewan Yun (jay50@pitt.edu)
+ */
+
 public class Queue<T> {
 	private Node firstIn;
 	private Node lastIn;
 	private int n;
-
-	/**
-	 * Refer to LICENSE
-	 *
-	 * @author Jaewan Yun (jay50@pitt.edu)
-	 */
 
 	public Queue() {
 		n = 0;

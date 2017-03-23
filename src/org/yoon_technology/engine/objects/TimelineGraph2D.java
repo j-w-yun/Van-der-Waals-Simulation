@@ -35,29 +35,35 @@ public class TimelineGraph2D extends Graph2D {
 		df = new DecimalFormat("#");
 		df.setMaximumFractionDigits(4);
 		df.setMaximumIntegerDigits(10);
-		//		df.setMinimumFractionDigits(5);
 		df.setMinimumIntegerDigits(1);
 	}
 
 	// Returns the id of the unique observation
-	public int addUniqueObservation(String label, Color color) {
+	public synchronized int addUniqueObservation(String label, Color color) {
 		observationLabels.add(label);
 		observationColors.add(color);
 		observations.add(new Queue<>());
 		return numObservations++;
 	}
 
-	public void addPoint(double point, int observationID) {
+	public synchronized void addPoint(double point, int observationID) {
 		observations.get(observationID).add(point);
 		if(observations.get(observationID).size() > observationsToShow + 1)
 			observations.get(observationID).remove();
 	}
 
-	public void clearObservations() {
-		// TODO
+	@Override
+	public synchronized void clear() {
+		super.clear();
+		lines.clear();
 	}
 
-	public void updateContext() {
+	@Override
+	public synchronized ArrayList<WorldObject> getLines() {
+		return this.lines;
+	}
+
+	public synchronized void updateContext() {
 		ArrayList<WorldObject> objects = new ArrayList<>();
 		ArrayList<WorldText> texts = new ArrayList<>();
 
@@ -74,6 +80,7 @@ public class TimelineGraph2D extends Graph2D {
 					maxVal = observation;
 			}
 		}
+
 		if(maxVal == 0)
 			maxVal = 0.000000001;
 
@@ -81,7 +88,6 @@ public class TimelineGraph2D extends Graph2D {
 		for(Queue<Double> uniqueObservation : observations) {
 
 			WorldObjectProperty lineProperty1 = new WorldObjectProperty();
-
 			lineProperty1.setDrawMode(WorldObjectProperty.LINES);
 			// Break continuum
 			WorldObjectProperty lineProperty2 = new WorldObjectProperty();
@@ -92,10 +98,10 @@ public class TimelineGraph2D extends Graph2D {
 			 */
 			double average = 0; // For setting the height of the label
 			int index = 0;
-			for(int j = 0; j < uniqueObservation.size(); j++) {
 
+			for(int j = 0; j < uniqueObservation.size(); j++) {
 				uniqueObservation.add(uniqueObservation.peek());
-				Double observation = uniqueObservation.remove();
+				double observation = uniqueObservation.remove();
 				if(j > uniqueObservation.size() - 10)
 					average += observation;
 
@@ -127,7 +133,6 @@ public class TimelineGraph2D extends Graph2D {
 				}
 
 				objects.add(object);
-
 				index++;
 			}
 			uniqueObservationsIndex++; // Iterate through all types of observations
@@ -137,25 +142,21 @@ public class TimelineGraph2D extends Graph2D {
 		// Title of graph
 		WorldText textObject = new WorldText(title);
 		textObject.setColor(Color.LIGHT_GRAY);
-		textObject.setPosition(new Vector3d(-title.length()*3.5, (height/2) - 15, 0.0));
-		textObject.setFont(new Font("Lucida Sans Typewriter", Font.BOLD, 12));
+		textObject.setPosition(new Vector3d(-title.length()*3.0, (height/2) - 15, 0.0));
+		textObject.setFont(new Font("Lucida Sans Typewriter", Font.BOLD, 10));
 		texts.add(textObject);
 
 		this.clear();
-		//		createAxes(0, -(height/2)+10);
-		synchronized(this.objects) {
-			for(int j = 0; j < objects.size(); j++) {
-				this.addObject(objects.get(j));
-			}
+		for(int j = 0; j < objects.size(); j++) {
+			this.addLine(objects.get(j));
 		}
-
 		for(int j = 0; j < texts.size(); j++) {
 			this.addText(texts.get(j));
 		}
 	}
 
 	@Override
-	protected void createAxes(int originX, int originY) {
+	protected synchronized void createAxes(int originX, int originY) {
 		ArrayList<WorldObject> objects = new ArrayList<>();
 
 		// X AXIS
@@ -184,15 +185,16 @@ public class TimelineGraph2D extends Graph2D {
 		objects.add(lineObject);
 
 		// TODO Y Axis
-		synchronized(this.objects) {
-			for(int j = 0; j < objects.size(); j++) {
-				this.addObject(objects.get(j));
-			}
+		for(int j = 0; j < objects.size(); j++) {
+			this.addLine(objects.get(j));
 		}
-		synchronized(this.texts) {
-			for(int j = 0; j < texts.size(); j++) {
-				this.addText(texts.get(j));
-			}
+		for(int j = 0; j < texts.size(); j++) {
+			this.addText(texts.get(j));
 		}
+	}
+
+	@Override
+	public synchronized void update(double timePassed) {
+		return;
 	}
 }

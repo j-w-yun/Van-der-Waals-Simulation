@@ -12,7 +12,9 @@ import org.yoon_technology.math.Vector3d;
 
 public class World {
 
-	protected ArrayList<WorldObject> objects;
+	protected ArrayList<WorldObject> points;
+	protected ArrayList<WorldObject> lines;
+	protected ArrayList<WorldObject> rectangles;
 	protected ArrayList<WorldText> texts;
 	protected Vector3d origin;
 	protected int width, height;
@@ -22,7 +24,9 @@ public class World {
 	}
 
 	public void restoreWorldSettings() {
-		objects = new ArrayList<>();
+		points = new ArrayList<>();
+		lines = new ArrayList<>();
+		rectangles = new ArrayList<>();
 		texts = new ArrayList<>();
 		origin = new Vector3d(0.0, 0.0, 0.0);
 	}
@@ -31,7 +35,6 @@ public class World {
 	public double resized(int width, int height) {
 		this.width = width;
 		this.height = height;
-
 		return 1.0;
 	}
 
@@ -39,28 +42,28 @@ public class World {
 		return new World();
 	}
 
-	public void addObject(WorldObject object) {
-		synchronized(this.objects) {
-			this.objects.add(object);
-		}
+	public synchronized void addPoint(WorldObject object) {
+		this.points.add(object);
 	}
 
-	public void addText(WorldText text) {
-		synchronized(this.texts) {
-			this.texts.add(text);
-		}
+	public synchronized void addLine(WorldObject line) {
+		this.lines.add(line);
 	}
 
-	public void update(double timePassed) {
-		synchronized(this.objects) {
-			for(WorldObject object : objects) {
-				object.update(timePassed);
-			}
+	public synchronized void addRectangle(WorldObject rectangle) {
+		this.rectangles.add(rectangle);
+	}
+
+	public synchronized void addText(WorldText text) {
+		this.texts.add(text);
+	}
+
+	public synchronized void update(double timePassed) {
+		for(WorldObject object : points) {
+			object.updatePosition(timePassed);
 		}
-		synchronized(this.texts) {
-			for(WorldText text : texts) {
-				text.update(timePassed);
-			}
+		for(WorldText text : texts) {
+			text.updatePosition(timePassed);
 		}
 	}
 
@@ -72,28 +75,34 @@ public class World {
 		// Implement in extensions
 	}
 
-	public void clear() {
-		synchronized(this.objects) {
-			objects.clear();
-		}
-		synchronized(this.texts) {
-			texts.clear();
-		}
+	public synchronized void clear() {
+		points.clear();
+		rectangles.clear();
+		lines.clear();
+		texts.clear();
 	}
 
-	public ArrayList<WorldObject> getObjects() {
-		return objects;
+	public synchronized ArrayList<WorldObject> getPoints() {
+		return points;
 	}
 
-	public ArrayList<WorldText> getTexts() {
+	public synchronized ArrayList<WorldObject> getLines() {
+		return lines;
+	}
+
+	public synchronized ArrayList<WorldObject> getRectangles() {
+		return rectangles;
+	}
+
+	public synchronized ArrayList<WorldText> getTexts() {
 		return texts;
 	}
 
-	public Vector3d getOrigin() {
+	public synchronized Vector3d getOrigin() {
 		return origin;
 	}
 
-	public void setOrigin(Vector3d origin) {
+	public synchronized void setOrigin(Vector3d origin) {
 		this.origin = origin;
 	}
 }

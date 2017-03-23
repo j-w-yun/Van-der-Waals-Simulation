@@ -1,7 +1,5 @@
 package org.yoon_technology.engine.objects;
 
-import java.util.ArrayList;
-
 /**
  * Refer to LICENSE
  *
@@ -81,15 +79,15 @@ public class Graph2D extends World {
 	}
 
 	public void initialize() {
-		ArrayList<WorldObject> objects = new ArrayList<>();
-
-		synchronized(this.getObjects()) {
-			this.clear();
-			for(int j = 0; j < objects.size(); j++) {
-				this.addObject(objects.get(j));
-			}
-			createAxes(0, 0);
-		}
+		//		ArrayList<WorldObject> objects = new ArrayList<>();
+		//
+		//		synchronized(this.points) {
+		//			this.clear();
+		//			for(int j = 0; j < objects.size(); j++) {
+		//				this.addPoint(objects.get(j));
+		//			}
+		//			createAxes(0, 0);
+		//		}
 	}
 
 	@Override
