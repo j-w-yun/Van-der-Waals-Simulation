@@ -4,7 +4,7 @@ TODO list:
 
 	Permeability of piston-boxes to allow critical molecules to walk far distances
 	
-	Neural net implementation for each solvent and common macromolecules (e.g. amino acids)
+	Neural net implementation for each common solvent macromolecule
 	
 	A more accurate & efficient OpenCL collision handling algorithm
 	
