@@ -46,3 +46,9 @@ The beginning
 ![alt tag](https://github.com/Jaewan-Yun/Classical-Simulation/blob/master/pics/1.png)
 ![alt tag](https://github.com/Jaewan-Yun/Classical-Simulation/blob/master/pics/2.png)
 ![alt tag](https://github.com/Jaewan-Yun/Classical-Simulation/blob/master/pics/3.png)
+
+
+      Jaewan Yun
+      Undergraduate Student
+      Molecular Biology, Chemistry, Computer Science
+      University of Pittsburgh
