@@ -1,12 +1,15 @@
 # Classical-Simulation
 
-TODO list:
+Experimental queue:
 
-    Selectively permeable cell list
-
-    Improve OpenCL algorithm
-
-
+    Global and local interactions - Both short and long range forces should be implemented in each particle container.
+    Train a net for each amino acid for the purpose of folding. Parse training data from RCSB Protein Data Bank.
+    Dynamic boundaries - expand and contract its boundary in 3 dimensions. Smaller, resizing pistons may be placed inside each other.
+    Colocalizing boundaries - A dynamic "cell" of interaction follows each particle.
+    http://kfe.fjfi.cvut.cz/~klimo/mpf/Ewald_notes.pdf
+    https://en.wikipedia.org/wiki/Brownian_dynamics
+    
+    
 
 <hr>
 
