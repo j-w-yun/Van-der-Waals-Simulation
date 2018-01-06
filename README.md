@@ -1,7 +1,3 @@
-# Classical-Simulation
-        
-<hr>
-
 Pistons implemented
 
 ![alt tag](https://github.com/Jaewan-Yun/Classical-Simulation/blob/master/pics/3_4.png)
